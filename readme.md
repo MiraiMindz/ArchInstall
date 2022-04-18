@@ -1,3 +1,3 @@
 # Arch Linux Installs
 
-This repo contains all of my Arch Linux Installations Scripts and custom ISOs
+This is a dedicated repo for my custom ISOs and Arch install scripts
