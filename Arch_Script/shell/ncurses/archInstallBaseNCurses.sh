@@ -1,33 +1,30 @@
 #!/usr/bin/env bash
 
-#######################################################################################################################
-#                                                                                                                     #
-# NOTE: ON NCURSES INSTALL, create way simillar to the timezone for the user to select the keymap                     #
-# ┌──────────────┬────────────────┬──────────────┬──────────────────────────────────────────────────────────────────┐ #
-# │ [x] CLI Auto │ [ ] CLI Guided │ [x] TUI Auto │ [ ] TUI Guided │                       STEPS          ┌──────────┤ #
-# │     [x]      │       [ ]      │      [x]     │       [ ]      │  01 - Load keys                      │ SCRIPT 1 │ #
-# │     [x]      │       [ ]      │      [x]     │       [ ]      │  02 - Update system clock            │ SCRIPT 1 │ #
-# │     [x]      │       [ ]      │      [x]     │       [ ]      │  03 - Install base packages          │ SCRIPT 1 │ #
-# │     [x]      │       [ ]      │      [x]     │       [ ]      │  04 - Generate FSTab                 │ SCRIPT 1 │ #
-# │     [x]      │       [ ]      │      [x]     │       [ ]      │  05 - Check FSTab                    │ SCRIPT 1 │ #
-# │     [x]      │       [ ]      │      [x]     │       [ ]      │  06 - Chroot                         │ SCRIPT 1 │ #
-# │     [x]      │       [ ]      │      [x]     │       [x]      │  07 - Update ZoneInfo                └──────────┤ #
-# │     [x]      │       [ ]      │      [x]     │       [x]      │  08 - Sync hardware clock                       │ #
-# │     [x]      │       [ ]      │      [x]     │       [x]      │  09 - Generate locales                          │ #
-# │     [x]      │       [ ]      │      [x]     │       [x]      │  10 - Save Locales                              │ #
-# │     [x]      │       [ ]      │      [x]     │       [ ]      │  11 - Save keyboard layout                      │ #
-# │     [x]      │       [ ]      │      [x]     │       [x]      │  12 - Set hostname                              │ #
-# │     [x]      │       [ ]      │      [x]     │       [ ]      │  13 - Hosts file                                │ #
-# │     [x]      │       [ ]      │      [x]     │       [ ]      │  14 - Custom hosts                              │ #
-# │     [x]      │       [ ]      │      [x]     │       [ ]      │  15 - Root password                             │ #
-# │     [x]      │       [ ]      │      [x]     │       [ ]      │  16 - Processor micro-code                      │ #
-# │     [x]      │       [ ]      │      [x]     │       [ ]      │  17 - Download bootloader and more              │ #
-# │     [x]      │       [ ]      │      [x]     │       [ ]      │  18 - Install bootloader                        │ #
-# └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘ #
-#######################################################################################################################
+######################################################################################################
+# ┌──────────────┬──────────────┬──────────────────────────────────────────────────────────────────┐ #
+# │ [x] CLI Auto │ [x] TUI Auto │ [x] TUI Guided │                       STEPS          ┌──────────┤ #
+# │     [x]      │      [x]     │       [x]      │  01 - Load keys                      │ SCRIPT 1 │ #
+# │     [x]      │      [x]     │       [x]      │  02 - Update system clock            │ SCRIPT 1 │ #
+# │     [x]      │      [x]     │       [x]      │  03 - Install base packages          │ SCRIPT 1 │ #
+# │     [x]      │      [x]     │       [x]      │  04 - Generate FSTab                 │ SCRIPT 1 │ #
+# │     [x]      │      [x]     │       [x]      │  05 - Check FSTab                    │ SCRIPT 1 │ #
+# │     [x]      │      [x]     │       [x]      │  06 - Chroot                         │ SCRIPT 1 │ #
+# │     [x]      │      [x]     │       [x]      │  07 - Update ZoneInfo                └──────────┤ #
+# │     [x]      │      [x]     │       [x]      │  08 - Sync hardware clock                       │ #
+# │     [x]      │      [x]     │       [x]      │  09 - Generate locales                          │ #
+# │     [x]      │      [x]     │       [x]      │  10 - Save Locales                              │ #
+# │     [x]      │      [x]     │       [x]      │  11 - Save keyboard layout                      │ #
+# │     [x]      │      [x]     │       [x]      │  12 - Set hostname                              │ #
+# │     [x]      │      [x]     │       [x]      │  13 - Hosts file and custom hosts               │ #
+# │     [x]      │      [x]     │       [x]      │  14 - Root password                             │ #
+# │     [x]      │      [x]     │       [x]      │  15 - Processor micro-code                      │ #
+# │     [x]      │      [x]     │       [x]      │  16 - Download bootloader and more              │ #
+# │     [x]      │      [x]     │       [x]      │  17 - Install bootloader                        │ #
+# └────────────────────────────────────────────────────────────────────────────────────────────────┘ #
+######################################################################################################
 
 ### Variables
-DARK_BLACK='\033[30m'
+DARK_BLACK='\033[30m'a
 DARK_RED='\033[31m'
 DARK_GREEN='\033[32m'
 DARK_YELLOW='\033[33m'
@@ -61,8 +58,8 @@ TEXTHIDDEN_OFF='\033[28m'
 TEXTSTRIKE_OFF='\033[29m'
 NOCOLOR='\033[39m'
 TEXTRESETALL='\033[m'
-STEPS="17"
-DEFAULT_TITLE="Arch Linux Mirai Install"
+steps="17"
+default_title="Arch Linux Mirai Install"
 WelcomeBox="┌────────────────────────────────────────────────────────────────────────────────────┐
 │                    Welcome to Mirai's Arch Linux Install Script                    │
 │ This is the BEFORE FIRST BOOT Script                                               │
@@ -83,6 +80,7 @@ WelcomeBox="┌─────────────────────�
 │                                                                                    │
 │                   So without further ado, let's start this script                  │
 └────────────────────────────────────────────────────────────────────────────────────┘"
+installmtd=""
 
 ### Functions
 cliInstall() {
@@ -247,10 +245,10 @@ cliInstall() {
 }
 
 ncursesAutoInstall() {
-    dialog --title "$DEFAULT_TITLE" --msgbox "\n${WelcomeBox}" 25 90 && clear
-    dialog --title "$DEFAULT_TITLE 1/$STEPS" --msgbox "\nLoading br-abnt2 keys" 7 30 && clear
+    dialog --title "$default_title" --msgbox "\n${WelcomeBox}" 25 90 && clear
+    dialog --title "$default_title 1/$steps" --msgbox "\nLoading br-abnt2 keys" 7 30 && clear
     loadkeys br-abnt2
-    dialog --title "$DEFAULT_TITLE 2/$STEPS" --msgbox "\nUpdating the system clock" 7 34 && clear
+    dialog --title "$default_title 2/$steps" --msgbox "\nUpdating the system clock" 7 34 && clear
     timedatectl set-ntp true
 
     counter=0;
@@ -259,29 +257,85 @@ ncursesAutoInstall() {
     trap "kill $pid 2> /dev/null" EXIT;
     while kill -0 $pid 2> /dev/null; do
         (( counter+=1 ))
-        echo $counter | dialog --title "$DEFAULT_TITLE 3/$STEPS" --gauge "Installing base packages" 7 50 0;
+        echo $counter | dialog --title "$default_title 3/$steps" --gauge "Installing base packages" 7 50 0;
         sleep 0.1
     done;
     trap - EXIT
     counter=100
-    echo $counter | dialog --title "$DEFAULT_TITLE 3/$STEPS" --gauge "Installing base packages" 7 50 0
+    echo $counter | dialog --title "$default_title 3/$steps" --gauge "Installing base packages" 7 50 0
     clear
 
-    dialog --title "$DEFAULT_TITLE 4/$STEPS" --msgbox "\nGenerating FSTab" 7 34 && clear
+    dialog --title "$default_title 4/$steps" --msgbox "\nGenerating FSTab" 7 34 && clear
     genfstab -U /mnt >> /mnt/etc/fstab
-    dialog --title "$DEFAULT_TITLE 5/$STEPS" --msgbox "\nChecking FSTab" 7 34 && clear
+    dialog --title "$default_title 5/$steps" --msgbox "\nChecking FSTab" 7 34 && clear
     if dialog --title "Is this correct?" --yesno "$(while read -r line; do echo "$line"; done </etc/fstab)" 22 94; then
-        dialog --title "$DEFAULT_TITLE" --msgbox "Proceeding" 7 30
+        dialog --title "$default_title" --msgbox "Proceeding" 7 30
     else
-        dialog --title "$DEFAULT_TITLE" --msgbox "Please fix the fstab and run this script again" 7 44
+        dialog --title "$default_title" --msgbox "Please fix the fstab and run this script again" 7 44
         clear
         printf "%s\n" "Please fix the fstab and run this script again"
         exit
     fi
 
-    dialog --title "$DEFAULT_TITLE 6/$STEPS" --msgbox "\nChrooting" 7 34 && clear
-    #
+    dialog --title "$default_title 6/$steps" --msgbox "\nChrooting" 7 34 && clear
 
+}
+
+ncursesManualInstall() {
+    usrkymp=$(dialog --title "$default_title 1/$steps" --output-fd 1 --inputbox "Type 'MENU' to use a menu selection\nYour desired keymap: \nExample: br-abnt2" 25 50); clear
+    lwcs_usrkymp=$(echo "$usrkymp" | tr '[:upper:]' '[:lower:]')
+    if [[ "$lwcs_usrkymp" == "menu" ]]; then # big menu
+        usrkymp=$(dialog --title "$default_title 1/$steps" --no-tags --output-fd 1 --menu "Select your desired keymap: " 7 60 0 "amiga-de" "amiga-de" "amiga-us" "amiga-us" "atari-de" "atari-de" "atari-se" "atari-se" "atari-uk-falcon" "atari-uk-falcon" "atari-us" "atari-us" "mac-euro" "mac-euro" "mac-euro2" "mac-euro2" "apple-a1048-sv" "apple-a1048-sv" "apple-a1243-sv-fn-reverse" "apple-a1243-sv-fn-reverse" "apple-a1243-sv" "apple-a1243-sv" "apple-internal-0x0253-sv-fn-reverse" "apple-internal-0x0253-sv-fn-reverse" "apple-internal-0x0253-sv" "apple-internal-0x0253-sv" "mac-be" "mac-be" "mac-de-latin1-nodeadkeys" "mac-de-latin1-nodeadkeys" "mac-de-latin1" "mac-de-latin1" "mac-de_CH" "mac-de_CH" "mac-dk-latin1" "mac-dk-latin1" "mac-dvorak" "mac-dvorak" "mac-es" "mac-es" "mac-fi-latin1" "mac-fi-latin1" "mac-fr" "mac-fr" "mac-fr_CH-latin1" "mac-fr_CH-latin1" "mac-it" "mac-it" "mac-no-latin1" "mac-no-latin1" "mac-pl" "mac-pl" "mac-pt-latin1" "mac-pt-latin1" "mac-se" "mac-se" "mac-template" "mac-template" "mac-uk" "mac-uk" "mac-us" "mac-us" "sun-pl-altgraph" "sun-pl-altgraph" "sun-pl" "sun-pl" "sundvorak" "sundvorak" "sunkeymap" "sunkeymap" "sunt4-es" "sunt4-es" "sunt4-fi-latin1" "sunt4-fi-latin1" "sunt4-no-latin1" "sunt4-no-latin1" "sunt5-cz-us" "sunt5-cz-us" "sunt5-de-latin1" "sunt5-de-latin1" "sunt5-es" "sunt5-es" "sunt5-fi-latin1" "sunt5-fi-latin1" "sunt5-fr-latin1" "sunt5-fr-latin1" "sunt5-ru" "sunt5-ru" "sunt5-uk" "sunt5-uk" "sunt5-us-cz" "sunt5-us-cz" "sunt6-uk" "sunt6-uk" "sv-latin1" "sv-latin1" "tj_alt-UTF8" "tj_alt-UTF8" "tr_q-latin5" "tr_q-latin5" "tralt" "tralt" "trf" "trf" "trq" "trq" "ttwin_alt-UTF-8" "ttwin_alt-UTF-8" "ttwin_cplk-UTF-8" "ttwin_cplk-UTF-8" "ttwin_ct_sh-UTF-8" "ttwin_ct_sh-UTF-8" "ttwin_ctrl-UTF-8" "ttwin_ctrl-UTF-8" "ua-cp1251" "ua-cp1251" "ua-utf-ws" "ua-utf-ws" "ua-utf" "ua-utf" "ua-ws" "ua-ws" "ua" "ua" "uk" "uk" "us-acentos" "us-acentos" "us" "us" "us1" "us1" "mk-cp1251" "mk-cp1251" "mk-utf" "mk-utf" "mk" "mk" "mk0" "mk0" "nl" "nl" "nl2" "nl2" "no-latin1" "no-latin1" "no" "no" "pc110" "pc110" "pl" "pl" "pl1" "pl1" "pl2" "pl2" "pl3" "pl3" "pl4" "pl4" "pt-latin1" "pt-latin1" "pt-latin9" "pt-latin9" "ro" "ro" "ro_std" "ro_std" "ro_win" "ro_win" "ru-cp1251" "ru-cp1251" "ru-ms" "ru-ms" "ru-yawerty" "ru-yawerty" "ru" "ru" "ru1" "ru1" "ru2" "ru2" "ru3" "ru3" "ru4" "ru4" "ru_win" "ru_win" "ruwin_alt-CP1251" "ruwin_alt-CP1251" "ruwin_alt-KOI8-R" "ruwin_alt-KOI8-R" "ruwin_alt-UTF-8" "ruwin_alt-UTF-8" "ruwin_alt_sh-UTF-8" "ruwin_alt_sh-UTF-8" "ruwin_cplk-CP1251" "ruwin_cplk-CP1251" "ruwin_cplk-KOI8-R" "ruwin_cplk-KOI8-R" "ruwin_cplk-UTF-8" "ruwin_cplk-UTF-8" "ruwin_ct_sh-CP1251" "ruwin_ct_sh-CP1251" "ruwin_ct_sh-KOI8-R" "ruwin_ct_sh-KOI8-R" "ruwin_ct_sh-UTF-8" "ruwin_ct_sh-UTF-8" "ruwin_ctrl-CP1251" "ruwin_ctrl-CP1251" "ruwin_ctrl-KOI8-R" "ruwin_ctrl-KOI8-R" "ruwin_ctrl-UTF-8" "ruwin_ctrl-UTF-8" "se-fi-ir209" "se-fi-ir209" "se-fi-lat6" "se-fi-lat6" "se-ir209" "se-ir209" "se-lat6" "se-lat6" "sg-latin1-lk450" "sg-latin1-lk450" "sg-latin1" "sg-latin1" "sg" "sg" "sk-prog-qwerty" "sk-prog-qwerty" "sk-prog-qwertz" "sk-prog-qwertz" "sk-qwerty" "sk-qwerty" "sk-qwertz" "sk-qwertz" "slovene" "slovene" "sr-cy" "sr-cy" "sr-latin" "sr-latin" "bashkir" "bashkir" "bg-cp1251" "bg-cp1251" "bg-cp855" "bg-cp855" "bg_bds-cp1251" "bg_bds-cp1251" "bg_bds-utf8" "bg_bds-utf8" "bg_pho-cp1251" "bg_pho-cp1251" "bg_pho-utf8" "bg_pho-utf8" "br-abnt" "br-abnt" "br-abnt2" "br-abnt2" "br-latin1-abnt2" "br-latin1-abnt2" "br-latin1-us" "br-latin1-us" "by-cp1251" "by-cp1251" "by" "by" "bywin-cp1251" "bywin-cp1251" "ca" "ca" "cf" "cf" "croat" "croat" "cz-cp1250" "cz-cp1250" "cz-lat2-prog" "cz-lat2-prog" "cz-lat2" "cz-lat2" "cz-qwertz" "cz-qwertz" "cz-us-qwertz" "cz-us-qwertz" "cz" "cz" "de-latin1-nodeadkeys" "de-latin1-nodeadkeys" "de-latin1" "de-latin1" "de-mobii" "de-mobii" "de" "de" "de_alt_UTF-8" "de_alt_UTF-8" "de_CH-latin1" "de_CH-latin1" "defkeymap" "defkeymap" "defkeymap_V1" "defkeymap_V1" "dk-latin1" "dk-latin1" "dk" "dk" "emacs" "emacs" "emacs2" "emacs2" "es-cp850" "es-cp850" "es" "es" "et-nodeadkeys" "et-nodeadkeys" "et" "et" "fa" "fa" "fi" "fi" "fr_CH-latin1" "fr_CH-latin1" "fr_CH" "fr_CH" "gr-pc" "gr-pc" "gr" "gr" "hu" "hu" "hu101" "hu101" "il-heb" "il-heb" "il-phonetic" "il-phonetic" "il" "il" "is-latin1-us" "is-latin1-us" "is-latin1" "is-latin1" "it-ibm" "it-ibm" "it" "it" "it2" "it2" "jp106" "jp106" "kazakh" "kazakh" "ky_alt_sh-UTF-8" "ky_alt_sh-UTF-8" "kyrgyz" "kyrgyz" "la-latin1" "la-latin1" "lt" "lt" "lt" "lt" "lt" "lt" "lv-tilde" "lv-tilde" "lv" "lv" "applkey" "applkey" "unicode" "unicode" "windowkeys" "windowkeys" "backspace" "backspace" "ctrl" "ctrl" "euro" "euro" "euro1" "euro1" "euro2" "euro2" "keypad" "keypad" "wangbe" "wangbe" "wangbe2" "wangbe2" "azerty" "azerty" "be-latin1" "be-latin1" "fr-latin1" "fr-latin1" "fr-latin9" "fr-latin9" "fr-pc" "fr-pc" "fr" "fr" "adnw" "adnw" "neo" "neo" "neoqwertz" "neoqwertz" "bone" "bone" "koy" "koy" "pt-olpc" "pt-olpc" "es-olpc" "es-olpc" "fr-bepo-latin9" "fr-bepo-latin9" "fr-bepo" "fr-bepo" "ANSI-dvorak" "ANSI-dvorak" "dvorak-ca-fr" "dvorak-ca-fr" "dvorak-es" "dvorak-es" "dvorak-fr" "dvorak-fr" "dvorak-l" "dvorak-l" "dvorak-la" "dvorak-la" "dvorak-no" "dvorak-no" "dvorak-programmer" "dvorak-programmer" "dvorak-r" "dvorak-r" "dvorak-ru" "dvorak-ru" "dvorak-sv-a1" "dvorak-sv-a1" "dvorak-sv-a5" "dvorak-sv-a5" "dvorak-uk" "dvorak-uk" "dvorak-ukp" "dvorak-ukp" "dvorak" "dvorak" "colemak" "colemak" "carpalx-full" "carpalx-full" "carpalx" "carpalx" "tr_f-latin5" "tr_f-latin5" "trf-fgGIod" "trf-fgGIod"); clear
+        loadkeys $usrkymp
+    else
+        loadkeys $usrkymp
+    fi
+
+    dialog --title "$default_title 2/$steps" --infobox "Updating system clock" 20 40
+    timedatectl set-ntp true
+
+    bspkgs=$(dialog --title "$default_title 3/$steps" --output-fd 1 --inputbox "Type \"AUTO\" to install the packages from the auto installation\nAUTO=base linux linux-firmware nano\nEnter the packages that you want to install:" 25 75); clear
+    lwcs_bspkgs=$(echo "$bspkgs" | tr '[:upper:]' '[:lower:]')
+    if [[ "$lwcs_bspkgs" == "auto" ]]; then
+        counter=0;
+        #pacstrap /mnt base linux linux-firmware nano &;
+        pid=$!;
+        trap "kill $pid 2> /dev/null" EXIT;
+        while kill -0 $pid 2> /dev/null; do
+            (( counter+=1 ))
+            echo $counter | dialog --title "$default_title 3/$steps" --gauge "Installing base packages" 7 50 0;
+            sleep 0.1
+        done;
+        trap - EXIT
+        counter=100
+        echo $counter | dialog --title "$default_title 3/$steps" --gauge "Installing base packages" 7 50 0
+        clear
+    else
+        counter=0;
+        #pacstrap /mnt "$bspkgs" &
+        pid=$!;
+        trap "kill $pid 2> /dev/null" EXIT;
+        while kill -0 $pid 2> /dev/null; do
+            (( counter+=1 ))
+            echo $counter | dialog --title "$default_title 3/$steps" --gauge "Installing base packages" 7 50 0;
+            sleep 0.1
+        done;
+        trap - EXIT
+        counter=100
+        echo $counter | dialog --title "$default_title 3/$steps" --gauge "Installing base packages" 7 50 0
+        clear
+    fi
+    dialog --title "$default_title 4/$steps" --infobox "\nGenerating FSTab" 7 34 && clear
+    dialog --title "$default_title 5/$steps" --infobox "\nChecking FSTab" 7 34 && clear
+    if dialog --title "Is this correct?" --yesno "$(while read -r line; do echo "$line"; done </etc/fstab)" 22 94; then
+        dialog --title "$default_title" --infobox "Proceeding" 7 30
+    else
+        dialog --title "$default_title" --infobox "Please fix the fstab and run this script again" 7 44
+        clear
+        printf "%s\n" "Please fix the fstab and run this script again"
+        exit
+    fi
+    dialog --title "$default_title 6/$steps" --msgbox "\nChrooting" 7 34 && clear
 }
 
 ### Installation
@@ -291,14 +345,17 @@ if [[ ! -e $(command -v dialog) || ! -f /usr/bin/dialog || ! -f /bin/dialog ]]; 
     cliInstall
 fi
 
-if dialog --title "$DEFAULT_TITLE" --yes-label "Automated" --no-label "Manual" --yesno "\nWelcome to my install script using ncurses/dialog utility\nDo you want the Automated Install or the Manual Install?" 7 64; then
+if dialog --title "$default_title" --yes-label "Automated" --no-label "Manual" --yesno "\nWelcome to my install script using ncurses/dialog utility\nDo you want the Automated Install or the Manual Install?" 7 64; then
+    installmtd="auto"
     clear
     ncursesAutoInstall
 else
-    dialog --title "$DEFAULT_TITLE" --msgbox "\nProceding with manual install" 5 7 && clear
+    installmtd="manu"
+    clear
+    ncursesManualInstall
 fi
 
 # Clear the screen after dialog script ends
-sh archInstallBaseNCurses.sh
+#sh archInstallBaseNCurses.sh
 clear
 exit
