@@ -1,5 +1,31 @@
 #!/usr/bin/env bash
 
+#######################################################################################################################
+#                                                                                                                     #
+# NOTE: ON NCURSES INSTALL, create way simillar to the timezone for the user to select the keymap                     #
+# ┌──────────────┬────────────────┬──────────────┬──────────────────────────────────────────────────────────────────┐ #
+# │ [x] CLI Auto │ [ ] CLI Guided │ [x] TUI Auto │ [ ] TUI Guided │                       STEPS          ┌──────────┤ #
+# │     [x]      │       [ ]      │      [x]     │       [ ]      │  01 - Load keys                      │ SCRIPT 1 │ #
+# │     [x]      │       [ ]      │      [x]     │       [ ]      │  02 - Update system clock            │ SCRIPT 1 │ #
+# │     [x]      │       [ ]      │      [x]     │       [ ]      │  03 - Install base packages          │ SCRIPT 1 │ #
+# │     [x]      │       [ ]      │      [x]     │       [ ]      │  04 - Generate FSTab                 │ SCRIPT 1 │ #
+# │     [x]      │       [ ]      │      [x]     │       [ ]      │  05 - Check FSTab                    │ SCRIPT 1 │ #
+# │     [x]      │       [ ]      │      [x]     │       [ ]      │  06 - Chroot                         │ SCRIPT 1 │ #
+# │     [x]      │       [ ]      │      [x]     │       [x]      │  07 - Update ZoneInfo                └──────────┤ #
+# │     [x]      │       [ ]      │      [x]     │       [x]      │  08 - Sync hardware clock                       │ #
+# │     [x]      │       [ ]      │      [x]     │       [x]      │  09 - Generate locales                          │ #
+# │     [x]      │       [ ]      │      [x]     │       [x]      │  10 - Save Locales                              │ #
+# │     [x]      │       [ ]      │      [x]     │       [ ]      │  11 - Save keyboard layout                      │ #
+# │     [x]      │       [ ]      │      [x]     │       [x]      │  12 - Set hostname                              │ #
+# │     [x]      │       [ ]      │      [x]     │       [ ]      │  13 - Hosts file                                │ #
+# │     [x]      │       [ ]      │      [x]     │       [ ]      │  14 - Custom hosts                              │ #
+# │     [x]      │       [ ]      │      [x]     │       [ ]      │  15 - Root password                             │ #
+# │     [x]      │       [ ]      │      [x]     │       [ ]      │  16 - Processor micro-code                      │ #
+# │     [x]      │       [ ]      │      [x]     │       [ ]      │  17 - Download bootloader and more              │ #
+# │     [x]      │       [ ]      │      [x]     │       [ ]      │  18 - Install bootloader                        │ #
+# └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘ #
+#######################################################################################################################
+
 ### Variables
 DARK_BLACK='\033[30m'
 DARK_RED='\033[31m'
@@ -35,7 +61,7 @@ TEXTHIDDEN_OFF='\033[28m'
 TEXTSTRIKE_OFF='\033[29m'
 NOCOLOR='\033[39m'
 TEXTRESETALL='\033[m'
-STEPS="19"
+STEPS="17"
 DEFAULT_TITLE="Arch Linux Mirai Install"
 WelcomeBox="┌────────────────────────────────────────────────────────────────────────────────────┐
 │                    Welcome to Mirai's Arch Linux Install Script                    │
@@ -238,12 +264,12 @@ ncursesAutoInstall() {
     done;
     trap - EXIT
     counter=100
-    echo $counter | dialog --title "$DEFAULT_TITLE 4/$STEPS" --gauge "Installing base packages" 7 50 0
+    echo $counter | dialog --title "$DEFAULT_TITLE 3/$STEPS" --gauge "Installing base packages" 7 50 0
     clear
 
-    dialog --title "$DEFAULT_TITLE 5/$STEPS" --msgbox "\nGenerating FSTab" 7 34 && clear
+    dialog --title "$DEFAULT_TITLE 4/$STEPS" --msgbox "\nGenerating FSTab" 7 34 && clear
     genfstab -U /mnt >> /mnt/etc/fstab
-    dialog --title "$DEFAULT_TITLE 6/$STEPS" --msgbox "\nChecking FSTab" 7 34 && clear
+    dialog --title "$DEFAULT_TITLE 5/$STEPS" --msgbox "\nChecking FSTab" 7 34 && clear
     if dialog --title "Is this correct?" --yesno "$(while read -r line; do echo "$line"; done </etc/fstab)" 22 94; then
         dialog --title "$DEFAULT_TITLE" --msgbox "Proceeding" 7 30
     else
@@ -253,14 +279,14 @@ ncursesAutoInstall() {
         exit
     fi
 
-    dialog --title "$DEFAULT_TITLE 7/$STEPS" --msgbox "\nChrooting" 7 34 && clear
+    dialog --title "$DEFAULT_TITLE 6/$STEPS" --msgbox "\nChrooting" 7 34 && clear
     #
 
 }
 
 ### Installation
 # Checks if dialog exists, if not go with default cli installation
-if [[ ! -e $(command -v dialog) || ! -f /usr/bin/dialog ]]; then
+if [[ ! -e $(command -v dialog) || ! -f /usr/bin/dialog || ! -f /bin/dialog ]]; then
     printf "%s\n" "dialog not found, proceeding with default cli installation"
     cliInstall
 fi
@@ -269,10 +295,10 @@ if dialog --title "$DEFAULT_TITLE" --yes-label "Automated" --no-label "Manual" -
     clear
     ncursesAutoInstall
 else
-    dialog --title "$DEFAULT_TITLE" --msgbox "\nNono" 5 7 && clear
+    dialog --title "$DEFAULT_TITLE" --msgbox "\nProceding with manual install" 5 7 && clear
 fi
 
-# Clear the screen after dialoag script ends
+# Clear the screen after dialog script ends
 sh archInstallBaseNCurses.sh
 clear
 exit

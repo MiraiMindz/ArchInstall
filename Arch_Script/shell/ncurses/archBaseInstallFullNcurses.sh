@@ -501,12 +501,14 @@ fi
 
 if dialog --title "$DEFAULT_TITLE" --yes-label "Automated" --no-label "Manual" --yesno "\nWelcome to my install script using ncurses/dialog utility\nDo you want the Automated Install or the Manual Install?" 7 64; then
     clear
+    INSTALLMTD="auto"
     ncursesAutoInstall
 else
+    INSTALLMTD="manu"
     dialog --title "$DEFAULT_TITLE" --msgbox "\nNono" 5 7 && clear
 fi
 
-# Clear the screen after dialoag script ends
+# Clear the screen after dialog script ends
 sh archInstallBaseNCurses.sh
 clear
 exit
