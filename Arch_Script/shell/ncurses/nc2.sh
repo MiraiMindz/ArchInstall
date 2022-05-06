@@ -1,26 +1,3 @@
-######################################################################################################
-# ┌──────────────┬──────────────┬──────────────────────────────────────────────────────────────────┐ #
-# │ [x] CLI Auto │ [x] TUI Auto │ [x] TUI Guided │                       STEPS          ┌──────────┤ #
-# │     [x]      │      [x]     │       [x]      │  01 - Load keys                      │ SCRIPT 1 │ #
-# │     [x]      │      [x]     │       [x]      │  02 - Update system clock            │ SCRIPT 1 │ #
-# │     [x]      │      [x]     │       [x]      │  03 - Install base packages          │ SCRIPT 1 │ #
-# │     [x]      │      [x]     │       [x]      │  04 - Generate FSTab                 │ SCRIPT 1 │ #
-# │     [x]      │      [x]     │       [x]      │  05 - Check FSTab                    │ SCRIPT 1 │ #
-# │     [x]      │      [x]     │       [x]      │  06 - Chroot                         │ SCRIPT 1 │ #
-# │     [x]      │      [x]     │       [x]      │  07 - Update ZoneInfo                └──────────┤ #
-# │     [x]      │      [x]     │       [x]      │  08 - Sync hardware clock                       │ #
-# │     [x]      │      [x]     │       [x]      │  09 - Generate locales                          │ #
-# │     [x]      │      [x]     │       [x]      │  10 - Save Locales                              │ #
-# │     [x]      │      [x]     │       [x]      │  11 - Save keyboard layout                      │ #
-# │     [x]      │      [x]     │       [x]      │  12 - Set hostname                              │ #
-# │     [x]      │      [x]     │       [x]      │  13 - Hosts file and custom hosts               │ #
-# │     [x]      │      [x]     │       [x]      │  14 - Root password                             │ #
-# │     [x]      │      [x]     │       [x]      │  15 - Processor micro-code                      │ #
-# │     [x]      │      [x]     │       [x]      │  16 - Download bootloader and more              │ #
-# │     [x]      │      [x]     │       [x]      │  17 - Install bootloader                        │ #
-# └────────────────────────────────────────────────────────────────────────────────────────────────┘ #
-######################################################################################################
-
 installmtd=""
 usrkymp=""
 default_title="Arch Linux Mirai Install"
@@ -119,82 +96,78 @@ cliInstall() {
 ncursesAutoInstall2() {
     sleep 5
     dialog --title "$default_title 7/$steps" --msgbox "\nUpdating the ZoneInfo to America/Sao_Paulo" 25 90 && clear
-    #ln -sf /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
+    ln -sf /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
 
     dialog --title "$default_title 8/$steps" --msgbox "\nSyncronizing the hardware clock to the system clock" 25 90 && clear
-    #hwclock --systohc
+    hwclock --systohc
 
     dialog --title "$default_title 9/$steps" --msgbox "\nEditing /etc/locale.gen to pt_BR.UTF-8" 25 90 && clear
-    #sed -i "s/#pt_BR.UTF-8 UTF-8/pt_BR.UTF-8 UTF-8/" /etc/locale.gen
-    #locale-gen
+    sed -i "s/#pt_BR.UTF-8 UTF-8/pt_BR.UTF-8 UTF-8/" /etc/locale.gen
+    locale-gen
     dialog --title "$default_title 10/$steps" --msgbox "\nSaving the locale in /etc/locale.conf" 25 90 && clear
-    #if [ -e /etc/locale.conf ]; then
-    #    echo "LANG=pt_BR.UTF-8" >> /etc/locale.conf
-    #else
-    #    touch /etc/locale.conf
-    #    echo "LANG=pt_BR.UTF-8" >> /etc/locale.conf
-    #fi
+    if [ -e /etc/locale.conf ]; then
+        echo "LANG=pt_BR.UTF-8" >> /etc/locale.conf
+    else
+        touch /etc/locale.conf
+        echo "LANG=pt_BR.UTF-8" >> /etc/locale.conf
+    fi
     dialog --title "$default_title 11/$steps" --msgbox "\nSaving the keyboard layout in /etc/vconsole.conf" 25 90 && clear
-    #if [ -e /etc/vconsole.conf ]; then
-    #    echo "KEYMAP=br-abnt2" >> /etc/vconsole.conf
-    #else
-    #    touch /etc/vconsole.conf
-    #    echo "KEYMAP=br-abnt2" >> /etc/vconsole.conf
-    #fi
+    if [ -e /etc/vconsole.conf ]; then
+        echo "KEYMAP=br-abnt2" >> /etc/vconsole.conf
+    else
+        touch /etc/vconsole.conf
+        echo "KEYMAP=br-abnt2" >> /etc/vconsole.conf
+    fi
 
     hstnm=$(dialog --title "$default_title 12/$steps" --output-fd 1 --inputbox "Enter this machine hostname: " 25 90); clear
-    #if [[ -e /etc/hostname ]]; then
-    #    echo $hstnm >> /etc/hostname
-    #else
-    #    touch /etc/hostname
-    #    echo $hstnm >> /etc/hostname
-    #fi
+    if [[ -e /etc/hostname ]]; then
+        echo $hstnm >> /etc/hostname
+    else
+        touch /etc/hostname
+        echo $hstnm >> /etc/hostname
+    fi
 
     dialog --title "$default_title 13/$steps" --msgbox "\nGenerating the hosts file" 25 90 && clear
-    #echo "# =====================================" >> /etc/hosts
-    #echo "# IPv4	Config" >> /etc/hosts
-    #echo "127.0.0.1	localhost" >> /etc/hosts
-    #echo "::1		localhost" >> /etc/hosts
-    #echo "127.0.1.1	${hstnm}.localdomain	${hstnm}" >> /etc/hosts
-    #echo "127.0.0.1	local" > /etc/Hosts
-    #echo "# =====================================" >> /etc/hosts
-    #echo "::1		ip6-localhost" >> /etc/hosts
-    #echo "::1		ip6-loopback" >> /etc/hosts
-    #echo "fe80::1%lo0 	localhost" >> /etc/hosts
-    #echo "ff00::0		ip6-localnet" >> /etc/hosts
-    #echo "ff00::0		ip6-mcastprefix" >> /etc/hosts
-    #echo "ff02::1		ip6-allnodes" >> /etc/hosts
-    #echo "ff02::2		ip6-allrouters" >> /etc/hosts
-    #echo "ff02::3		ip6-allhosts" >> /etc/hosts
-    #echo "0.0.0.0		0.0.0.0" >> /etc/hosts
+    echo "# =====================================" >> /etc/hosts
+    echo "# IPv4	Config" >> /etc/hosts
+    echo "127.0.0.1	localhost" >> /etc/hosts
+    echo "::1		localhost" >> /etc/hosts
+    echo "127.0.1.1	${hstnm}.localdomain	${hstnm}" >> /etc/hosts
+    echo "127.0.0.1	local" > /etc/Hosts
+    echo "# =====================================" >> /etc/hosts
+    echo "::1		ip6-localhost" >> /etc/hosts
+    echo "::1		ip6-loopback" >> /etc/hosts
+    echo "fe80::1%lo0 	localhost" >> /etc/hosts
+    echo "ff00::0		ip6-localnet" >> /etc/hosts
+    echo "ff00::0		ip6-mcastprefix" >> /etc/hosts
+    echo "ff02::1		ip6-allnodes" >> /etc/hosts
+    echo "ff02::2		ip6-allrouters" >> /etc/hosts
+    echo "ff02::3		ip6-allhosts" >> /etc/hosts
+    echo "0.0.0.0		0.0.0.0" >> /etc/hosts
 
     if dialog --title "$default_title 13/$steps" --yes-label "Yes, add" --no-label "No, don't add" --yesno "\nDo you want to add Custom Hosts to this file too?" 7 64; then
         clear
         dialog --title "$default_title 13/$steps" --infobox "Adding custom hosts" 25 90 && clear
-        #curl -fL "https://raw.githubusercontent.com/MiraiMindz/.dotfiles/main/misc/MiraiHosts.txt" >> /etc/hosts
+        curl -fL "https://raw.githubusercontent.com/MiraiMindz/.dotfiles/main/misc/MiraiHosts.txt" >> /etc/hosts
     else
         dialog --title "$default_title 13/$steps" --msgbox "\nProceeding with the installation" 5 12 && clear
     fi
 
     rtpass=$(dialog --title "$default_title 14/$steps" --output-fd 1 --passwordbox "Enter the root password: " 12 50); clear
-    #echo -e "$rtpass\n$rtpass" | sudo passwd -q
+    echo -e "$rtpass\n$rtpass" | sudo passwd -q
 
     if dialog --title "$default_title 15/$steps" --yes-label "Intel" --no-label "AMD" --yesno "\nIs your processor Intel or AMD?" 7 64; then
-        #pacman -S intel-ucode
+        pacman -S intel-ucode
     else
-        #pacman -S amd-ucode
+        pacman -S amd-ucode
     fi
 
-    #printf "Downloading bootloader and other packages\n" # 18/$steps
-    #pacman -S grub networkmanager dialog wireless_tools wpa_supplicant os-prober mtools dosfstools base-devel linux-headers iwd dhcpcd
-
     dialog --title "$default_title 16/$steps" --msgbox "\nDownloading bootloader and other packages" 5 12 && clear
-    #pacman -S grub networkmanager dialog wireless_tools wpa_supplicant os-prober mtools dosfstools base-devel linux-headers iwd dhcpcd
+    pacman -S grub networkmanager dialog wireless_tools wpa_supplicant os-prober mtools dosfstools base-devel linux-headers iwd dhcpcd
 
-    #printf "Installing bootloader\n"
     dsknm=$(dialog --title "$default_title 17/$steps" --output-fd 1 --inputbox "What is the full name of your disk (/dev/sdX): " 25 90); clear
-    #grub-install --target=i386-pc $dsknm
-    #grub-mkconfig -o /boot/grub/grub.cfg
+    grub-install --target=i386-pc $dsknm
+    grub-mkconfig -o /boot/grub/grub.cfg
 
 }
 
@@ -212,16 +185,16 @@ ncursesManualInstall2() {
             tmzn=$localtmzn
         fi
     fi
-    #ln -sf /usr/share/zoneinfo/$tmzn /etc/localtime
+    ln -sf /usr/share/zoneinfo/$tmzn /etc/localtime
 
     dialog --title "$default_title 9/$steps" --infobox "\nSyncronizing the hardware clock to the system clock" 25 90 && clear
-    #hwclock --systohc
+    hwclock --systohc
 
     localelang=$(dialog --title "$default_title 10/$steps" --output-fd 1 --inputbox "Type 'MENU' to use a menu selection\nEnter the languages that you want to use on your system:\nNOTE: They need to be separated by comma (,) without spaces in between\nExample: pt_BR.UTF-8 UTF-8,en_US ISO-8859-1" 25 75); clear
     IFS=',' read -r -a splt_localelang <<< "$localelang"
     usrlocaleslist=()
     for element in "${splt_localelang[@]}"; do
-        sed -i "s/#$element/$element/" #/etc/locale.gen
+        sed -i "s/#$element/$element/" /etc/locale.gen
         usrlocaleslist+="\"$element\" \"$element\" "
     done
     cmd=("dialog --title \"Mirai Arch\" --no-tags --output-fd 1 --menu \"Select the language that you will use on your system\" 25 75 0")
@@ -252,43 +225,43 @@ ncursesManualInstall2() {
         echo $hstnm >> /etc/hostname
     fi
 
-    #echo "# =====================================" >> /etc/hosts
-    #echo "# IPv4	Config" >> /etc/hosts
-    #echo "127.0.0.1	localhost" >> /etc/hosts
-    #echo "::1		localhost" >> /etc/hosts
-    #echo "127.0.1.1	${hstnm}.localdomain	${hstnm}" >> /etc/hosts
-    #echo "127.0.0.1	local" > /etc/Hosts
-    #echo "# =====================================" >> /etc/hosts
-    #echo "::1		ip6-localhost" >> /etc/hosts
-    #echo "::1		ip6-loopback" >> /etc/hosts
-    #echo "fe80::1%lo0 	localhost" >> /etc/hosts
-    #echo "ff00::0		ip6-localnet" >> /etc/hosts
-    #echo "ff00::0		ip6-mcastprefix" >> /etc/hosts
-    #echo "ff02::1		ip6-allnodes" >> /etc/hosts
-    #echo "ff02::2		ip6-allrouters" >> /etc/hosts
-    #echo "ff02::3		ip6-allhosts" >> /etc/hosts
-    #echo "0.0.0.0		0.0.0.0" >> /etc/hosts
+    echo "# =====================================" >> /etc/hosts
+    echo "# IPv4	Config" >> /etc/hosts
+    echo "127.0.0.1	localhost" >> /etc/hosts
+    echo "::1		localhost" >> /etc/hosts
+    echo "127.0.1.1	${hstnm}.localdomain	${hstnm}" >> /etc/hosts
+    echo "127.0.0.1	local" > /etc/Hosts
+    echo "# =====================================" >> /etc/hosts
+    echo "::1		ip6-localhost" >> /etc/hosts
+    echo "::1		ip6-loopback" >> /etc/hosts
+    echo "fe80::1%lo0 	localhost" >> /etc/hosts
+    echo "ff00::0		ip6-localnet" >> /etc/hosts
+    echo "ff00::0		ip6-mcastprefix" >> /etc/hosts
+    echo "ff02::1		ip6-allnodes" >> /etc/hosts
+    echo "ff02::2		ip6-allrouters" >> /etc/hosts
+    echo "ff02::3		ip6-allhosts" >> /etc/hosts
+    echo "0.0.0.0		0.0.0.0" >> /etc/hosts
     if dialog --title "$default_title 13/$steps" --yes-label "Yes" --no-label "No" --yesno "Creating hosts files\nDo you want to add custom hosts to it?" 7 64; then
         clear
         dialog --title "$default_title 13/$steps" --infobox "Adding custom hosts" 25 90 && clear
-        #curl -fL "https://raw.githubusercontent.com/MiraiMindz/.dotfiles/main/misc/MiraiHosts.txt" >> /etc/hosts
+        curl -fL "https://raw.githubusercontent.com/MiraiMindz/.dotfiles/main/misc/MiraiHosts.txt" >> /etc/hosts
     fi
 
     rtpass=$(dialog --title "$default_title 14/$steps" --output-fd 1 --passwordbox "Enter the root password: " 12 50); clear
-    #echo -e "$rtpass\n$rtpass" | sudo passwd -q
+    echo -e "$rtpass\n$rtpass" | sudo passwd -q
 
     if dialog --title "$default_title 15/$steps" --yes-label "Intel" --no-label "AMD" --yesno "Is your processor Intel or AMD?" 7 64; then
-        #pacman -S intel-ucode
+        pacman -S intel-ucode
     else
-        #pacman -S amd-ucode
+        pacman -S amd-ucode
     fi
 
     instpkgs=$(dialog --title "$default_title 16/$steps" --output-fd 1 --inputbox "Type \"AUTO\" to install the packages from the auto installation\nAUTO=grub networkmanager dialog wireless_tools wpa_supplicant os-prober mtools dosfstools base-devel linux-headers iwd dhcpcd\nEnter the packages that you want to install:" 25 75); clear
     lwcs_instpkgs=$(echo "$instpkgs" | tr '[:upper:]' '[:lower:]')
     if [[ "$lwcs_instpkgs" == "auto" ]]; then
-        #pacman -S grub networkmanager dialog wireless_tools wpa_supplicant os-prober mtools dosfstools base-devel linux-headers iwd dhcpcd
+        pacman -S grub networkmanager dialog wireless_tools wpa_supplicant os-prober mtools dosfstools base-devel linux-headers iwd dhcpcd
     else
-        #pacman -S "$instpkgs"
+        pacman -S "$instpkgs"
     fi
 
     if [[ -e $(command -v grub) ]]; then
@@ -299,8 +272,8 @@ ncursesManualInstall2() {
         else
             grb_dsk=$_grb_dsk
         fi
-        #grub-install -v --target=$tgt_plat /dev/$grb_dsk
-        #grub-mkconfig -o /boot/grub/grub.cfg
+        grub-install -v --target=$tgt_plat /dev/$grb_dsk
+        grub-mkconfig -o /boot/grub/grub.cfg
     else
         othr_btmgr=$(dialog --title "$default_title 17/$steps" --output-fd 1 --inputbox "Please provide the command to install your custom bootloader:" 25 75); clear
         $othr_btmgr

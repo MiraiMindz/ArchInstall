@@ -264,7 +264,7 @@ ncursesAutoInstall() {
     fi
 
     dialog --title "$default_title 5/$steps" --msgbox "\nInstalling base packages" 7 34 && clear
-    pacstrap /mnt base linux linux-firmware nano &;
+    pacstrap /mnt base linux linux-firmware nano
 
     dialog --title "$default_title 6/$steps" --msgbox "\nChrooting" 7 34 && clear
 
@@ -286,33 +286,11 @@ ncursesManualInstall() {
     bspkgs=$(dialog --title "$default_title 3/$steps" --output-fd 1 --inputbox "Type \"AUTO\" to install the packages from the auto installation\nAUTO=base linux linux-firmware nano\nEnter the packages that you want to install:" 25 75); clear
     lwcs_bspkgs=$(echo "$bspkgs" | tr '[:upper:]' '[:lower:]')
     if [[ "$lwcs_bspkgs" == "auto" ]]; then
-        counter=0;
-        #pacstrap /mnt base linux linux-firmware nano &;
-        pid=$!;
-        trap "kill $pid 2> /dev/null" EXIT;
-        while kill -0 $pid 2> /dev/null; do
-            (( counter+=1 ))
-            echo $counter | dialog --title "$default_title 3/$steps" --gauge "Installing base packages" 7 50 0;
-            sleep 0.1
-        done;
-        trap - EXIT
-        counter=100
-        echo $counter | dialog --title "$default_title 3/$steps" --gauge "Installing base packages" 7 50 0
-        clear
+        dialog --title "$default_title 3/$steps" --infobox "Installing base packages" 7 50 0;
+        pacstrap /mnt base linux linux-firmware nano
     else
-        counter=0;
-        #pacstrap /mnt "$bspkgs" &
-        pid=$!;
-        trap "kill $pid 2> /dev/null" EXIT;
-        while kill -0 $pid 2> /dev/null; do
-            (( counter+=1 ))
-            echo $counter | dialog --title "$default_title 3/$steps" --gauge "Installing base packages" 7 50 0;
-            sleep 0.1
-        done;
-        trap - EXIT
-        counter=100
-        echo $counter | dialog --title "$default_title 3/$steps" --gauge "Installing base packages" 7 50 0
-        clear
+        dialog --title "$default_title 3/$steps" --infobox "Installing packages" 7 50 0;
+        pacstrap /mnt "$bspkgs"
     fi
     dialog --title "$default_title 4/$steps" --infobox "\nGenerating FSTab" 7 34 && clear
     dialog --title "$default_title 5/$steps" --infobox "\nChecking FSTab" 7 34 && clear
@@ -343,8 +321,3 @@ else
     clear
     ncursesManualInstall
 fi
-
-# Clear the screen after dialog script ends
-#sh archInstallBaseNCurses.sh
-clear
-exit
