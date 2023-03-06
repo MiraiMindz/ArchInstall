@@ -373,13 +373,18 @@ func ParseSizeString(text string) string {
 	numSize := ExtractNumbers(text)[0]
 	typeSize := ExtractLetters(text)[0]
 
+	// Edited because I'm not sure if binary notation works on sgdisk
+	// So I'm using the example notation in the manpage.
 	switch strings.ToLower(typeSize) {
 	case "k", "ki", "kb", "kib":
-		resString = fmt.Sprintf("%dKiB", numSize)
+		//resString = fmt.Sprintf("%dKiB", numSize)
+		resString = fmt.Sprintf("%dM", numSize)
 	case "m", "mi", "mb", "mib":
-		resString = fmt.Sprintf("%dMiB", numSize)
+		//resString = fmt.Sprintf("%dMiB", numSize)
+		resString = fmt.Sprintf("%dM", numSize)
 	case "g", "gi", "gb", "gib":
-		resString = fmt.Sprintf("%dGiB", numSize)
+		//resString = fmt.Sprintf("%dGiB", numSize)
+		resString = fmt.Sprintf("%dG", numSize)
 	}
 	return resString
 }

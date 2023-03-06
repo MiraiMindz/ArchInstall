@@ -69,15 +69,16 @@ if none is set:
 import (
 	"ArchInstall/helpers"
 	"fmt"
-	"os"
-	"os/exec"
+	//"os"
+	//"os/exec"
 	"strconv"
+	"strings"
 )
 
 func setCountryISO() string {
+	iso := helpers.CurlResponse("https://ifconfig.co/country-iso")
 	helpers.ClearConsole()
 	helpers.PrintHeader("Pre-Install", "Getting country ISO")
-	iso := helpers.CurlResponse("https://ifconfig.co/country-iso")
 	if helpers.YesNo(fmt.Sprintf("Country ISO detected to be %s, is this correct?", iso)) {
 		return iso
 	} else {
@@ -89,34 +90,43 @@ func setCountryISO() string {
 func setTimeDate() {
 	helpers.ClearConsole()
 	helpers.PrintHeader("Pre-Install", "Synchronizing hardware clock")
-	cmd := exec.Command("timedatectl", "set-ntp", "true")
-	cmd.Stdin = os.Stdin
-	out, err := cmd.Output()
-	helpers.Check(err)
-	fmt.Println(string(out))
+	//cmd := helpers.RunShellCommand("timedatectl", "set-ntp", "true")
+	//fmt.Println(cmd)
+
+	fmt.Printf("%s %s %s\n", "timedatectl", "set-ntp", "true")
 }
 
 func setupPacman(reflectorCountryISO string) {
 	helpers.ClearConsole()
 	helpers.PrintHeader("Pre-Install", "Setting up PacMan")
-	cmd := helpers.RunShellCommand("pacman", "-S", "--noconfirm", "archlinux-keyring")
-	fmt.Print(cmd)
-	cmd = helpers.RunShellCommand("pacman", "-S", "--noconfirm", "--needed", "pacman-contrib")
-	fmt.Println(cmd)
-	helpers.ReplaceFileLine("/etc/pacman.conf", "#ParallelDownloads", "ParallelDownloads")
-	cmd = helpers.RunShellCommand("pacman", "-S", "--noconfirm", "--needed", "reflector", "grub")
-	fmt.Println(cmd)
+	//cmd := helpers.RunShellCommand("pacman", "-S", "--noconfirm", "archlinux-keyring")
+	//fmt.Print(cmd)
+	//cmd = helpers.RunShellCommand("pacman", "-S", "--noconfirm", "--needed", "pacman-contrib")
+	//fmt.Println(cmd)
+	//helpers.ReplaceFileLine("/etc/pacman.conf", "#ParallelDownloads", "ParallelDownloads")
+	//cmd = helpers.RunShellCommand("pacman", "-S", "--noconfirm", "--needed", "reflector", "grub")
+	//fmt.Println(cmd)
 
-	helpers.CopyFile("/etc/pacman.d/mirrorlist", "/etc/pacman.d/mirrorlist.backup")
-	reflectorArgs := []string{	"-a", "48", "-c", reflectorCountryISO, "-f", "5",
-								"-l", "20", "--sort", "rate", "--save", "/etc/pacman.d/mirrorlist"}
-	cmd = helpers.RunShellCommand("reflector", reflectorArgs...)
-	fmt.Println(cmd)
-	cmd = helpers.RunShellCommand("mkdir", "/mnt")
-	fmt.Println(cmd)
+	//helpers.CopyFile("/etc/pacman.d/mirrorlist", "/etc/pacman.d/mirrorlist.backup")
+	//reflectorArgs := []string{	"-a", "48", "-c", reflectorCountryISO, "-f", "5",
+	//							"-l", "20", "--sort", "rate", "--save", "/etc/pacman.d/mirrorlist"}
+	//cmd = helpers.RunShellCommand("reflector", reflectorArgs...)
+	//fmt.Println(cmd)
+	//cmd = helpers.RunShellCommand("mkdir", "/mnt")
+	//fmt.Println(cmd)
 
-	cmd = helpers.RunShellCommand("pacman", "-S", "--noconfirm", "--needed", "gptfdisk")
-	fmt.Println(cmd)
+	//cmd = helpers.RunShellCommand("pacman", "-S", "--noconfirm", "--needed", "gptfdisk")
+	//fmt.Println(cmd)
+
+	fmt.Printf("%s %s %s %s\n", "pacman", "-S", "--noconfirm", "archlinux-keyring")
+	fmt.Printf("%s %s %s %s %s\n", "pacman", "-S", "--noconfirm", "--needed", "pacman-contrib")
+	fmt.Printf("%s %s %s\n", "/etc/pacman.conf", "#ParallelDownloads", "ParallelDownloads")
+	fmt.Printf("%s %s %s %s %s %s\n", "pacman", "-S", "--noconfirm", "--needed", "reflector", "grub")
+	fmt.Printf("%s %s\n", "/etc/pacman.d/mirrorlist", "/etc/pacman.d/mirrorlist.backup")
+	fmt.Printf("%s %s %s %s %s %s %s %s %s %s %s %s %s\n", "reflector", "-a", "48", "-c", reflectorCountryISO, "-f", "5", "-l", "20", "--sort", "rate", "--save", "/etc/pacman.d/mirrorlist")
+	fmt.Printf("%s %s\n", "mkdir", "/mnt")
+	fmt.Printf("%s %s %s %s %s\n", "pacman", "-S", "--noconfirm", "--needed", "gptfdisk")
+
 }
 
 func formatDisk(cfgFile string) {
@@ -124,9 +134,12 @@ func formatDisk(cfgFile string) {
 	helpers.PrintHeader("Pre-Install", "Formatting Disk")
 
 	disk := helpers.JsonGetter(cfgFile, "disk")
-	helpers.RunShellCommand("umount", "-A", "--recursive", "/mnt")
-	helpers.RunShellCommand("sgdisk", "-Z", disk)
-	helpers.RunShellCommand("sgdisk", "-a", "2048", "-o", disk)
+	//helpers.RunShellCommand("umount", "-A", "--recursive", "/mnt")
+	//helpers.RunShellCommand("sgdisk", "-Z", disk)
+	//helpers.RunShellCommand("sgdisk", "-a", "2048", "-o", disk)
+	fmt.Printf("%s %s %s %s\n", "umount", "-A", "--recursive", "/mnt")
+	fmt.Printf("%s %s %s\n", "sgdisk", "-Z", disk)
+	fmt.Printf("%s %s %s %s %s\n", "sgdisk", "-a", "2048", "-o", disk)
 }
 
 func bootSystem() string {
@@ -149,7 +162,12 @@ func bootSystem() string {
 	}
 }
 
-func getRecommendedSwapSize(totalRam int) (int, string) {
+
+
+//region disk
+//// I think it's cleaner now
+
+func _getRecommendedSwapSize(totalRam int) (int, string) {
 	//var recommendedSize uint64
 	var swapRecommendedSize int
 	var ramSizes = []int{
@@ -167,61 +185,8 @@ func getRecommendedSwapSize(totalRam int) (int, string) {
 			swapRecommendedSize = i
 		}
 	}
-	return swapRecommendedSize, fmt.Sprintf("0:0:+%dGiB", swapRecommendedSize)
+	return swapRecommendedSize, fmt.Sprintf("0:0:+%dG", swapRecommendedSize)
 }
-
-func partitionDisk(cfgFile string) (bool, int) {
-	isSWAPSet := false
-	rrSize := 0
-	bSys := helpers.JsonGetter(cfgFile, "bootSystem")
-	disk := helpers.JsonGetter(cfgFile, "disk")
-	if bSys == "BIOS" {
-		cmd := helpers.RunShellCommand("sgdisk", "-n", "0:0:+1M", "--typecode=0:ef02", "--change-name=0:'BIOSBOOT'", disk)
-		fmt.Println(cmd)
-	} else {
-		cmd := helpers.RunShellCommand("sgdisk", "-n", "0:0:+300M", "--typecode=0:ef00", "--change-name=0:'EFIBOOT'", disk)
-		fmt.Println(cmd)
-	}
-
-
-	memInfo := helpers.GetLine("/proc/meminfo", "MemTotal")
-	totalMem := helpers.ExtractNumbers(memInfo.(string))[0] * helpers.KiB
-
-	if totalMem < (8 * helpers.GiB) {
-		rSize, swapSize := getRecommendedSwapSize(totalMem)
-		if rSize > 0 {
-			rrSize = rSize * helpers.GiB
-			fmt.Println("The script detected that you have less than 8GiB of RAM")
-			fmt.Printf("Based on your RAM size of %s, the script recommends a SWAP size of %s\n",
-			helpers.ByteSizeConverter(uint64(totalMem)), helpers.ByteSizeConverter(uint64(rSize * helpers.GiB)))
-
-			if helpers.YesNo("Would you like to create a SWAP partition?") {
-				cmd := helpers.RunShellCommand("sgdisk", "-n", swapSize, "--typecode=0:8200", "--change-name=0:'SWAP'", disk)
-				fmt.Println(cmd)
-				isSWAPSet = true
-			}
-		}
-	}
-
-	//cmd := helpers.RunShellCommand("sgdisk", "-n", "0:0:0", "--typecode=0:8300", "--change-name=0:'ROOT'", disk)
-	//fmt.Println(cmd)
-
-	// SET PARTITIONING
-
-	// sgdisk -n 0:0:+4GiB -t 0:8200 -c 0:swap
-
-	cmd := helpers.RunShellCommand("partprobe", disk)
-	fmt.Println(cmd)
-
-	return isSWAPSet, rrSize
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//// I think it's cleaner now
-//
 
 func _calcRootHomeSize(dSizePercent int) (int, int) {
 	dRSize := int(helpers.RoundMultiple((float64(dSizePercent) / 3.0), 8))
@@ -229,7 +194,6 @@ func _calcRootHomeSize(dSizePercent int) (int, int) {
 
 	return (dRSize * helpers.GiB), (dHSize * helpers.GiB)
 }
-
 
 func _showRemainingDisk(restSize int) {
 	remainDiskSpace := fmt.Sprintf("Remaining Disk Space: %s (%d bytes)", helpers.ByteSizeConverter(uint64(restSize)), restSize)
@@ -240,27 +204,84 @@ func _askSizeOfDisk(restSize, diskFullSize int, partName string) (int, string) {
 	var retSize int
 	var sgStr string
 
-
 	fmt.Println(helpers.PrintBlack("use 'G' for Giga, 'M' for Mega and 'K' for Kilo, example: 400M"))
-	fmt.Println(helpers.PrintBlack("It doesn't supports decimal places, so if you want 2.5G write as 2500M"))
-	userSize := helpers.InputPrompt(fmt.Sprintf("Enter the size of the %s partition", partName))
-	userByteSize := helpers.ConvertToByte(userSize)
-
-	if (diskFullSize - userByteSize) <= 0 {
-
-		fmt.Println(helpers.PrintRed("Can't exceed drive physical space"))
+	userSize := helpers.InputPrompt(fmt.Sprintf("Enter the size of the \"%s\" partition", partName))
+	if strings.Contains(userSize, ".") {
+		helpers.ClearConsole()
+		fmt.Println(helpers.PrintRed("Can't use decimal places"))
+		_showRemainingDisk(restSize)
 		retSize, sgStr = _askSizeOfDisk(restSize, diskFullSize, partName)
 	} else {
-		retSize = restSize - userByteSize
-		sgStr = fmt.Sprintf("0:0:+%s", helpers.ParseSizeString(userSize))
+		userByteSize := helpers.ConvertToByte(userSize)
+		if (diskFullSize - userByteSize) <= 0 {
+			helpers.ClearConsole()
+			fmt.Println(helpers.PrintRed("Can't exceed drive physical space"))
+			_showRemainingDisk(restSize)
+			retSize, sgStr = _askSizeOfDisk(restSize, diskFullSize, partName)
+		} else {
+			retSize = restSize - userByteSize
+			sgStr = fmt.Sprintf("0:0:+%s", helpers.ParseSizeString(userSize))
+		}
 	}
 
 	return retSize, sgStr
 }
 
-func _setRootPart(isHomeSet, isFileSet, isCustomSet bool, percentSize, restSize, diskFullSize int) (int, string, string) {
+func _askPartitionFileSystem(partName string) string {
+	prompt := fmt.Sprintf("Select the file system for the partition %s", partName)
+	fileSystems := []string{
+		"ext4",
+		"btrfs",
+	}
+	_, selectedFileSystem := helpers.PromptSelect(prompt, fileSystems)
+
+	return selectedFileSystem
+}
+
+func _askPartitionName(prompt string) string {
+	partName := helpers.InputPrompt(prompt)
+	if len(partName) <= 0 {
+		fmt.Println(helpers.PrintRed("Partition name can't be blank"))
+		partName = _askPartitionName(prompt)
+	}
+	return partName
+}
+
+
+func _createPartitions(partitionName, sgString, partitionCode, disk string) {
+	tCode := fmt.Sprintf("--typecode=0:%s", partitionCode)
+	pName := fmt.Sprintf("--change-name=0:'%s'", partitionName)
+	fmt.Printf("%s %s %s %s %s %s\n", "sgdisk", "-n", sgString, tCode, pName, disk)
+
+	//cmd := helpers.RunShellCommand("sgdisk", "-n", sgString, tCode, pName, disk)
+	//fmt.Println(cmd)
+
+
+	// sgdisk -n 3::-0 --typecode=3:8300 --change-name=3:'ROOT' ${DISK}
+	// mkfs.btrfs -L ROOT ${partition3} -f
+	// mkfs.ext4 -L ROOT ${partition3}
+}
+
+func _createFileSystems(partitionName, partDisk, filesystem string) {
+	if strings.ToLower(filesystem) == "btrfs" {
+		//cmd = helpers.RunShellCommand("mkfs.btrfs", "-L", partitionName, "-f")
+		//fmt.Println(cmd)
+		fmt.Printf("%s %s %s %s %s\n","mkfs.btrfs", "-L", partitionName, partDisk, "-f")
+	} else if strings.ToLower(filesystem) == "ext4" {
+		//cmd = helpers.RunShellCommand("mkfs.ext4", "-L", partitionName)
+		//fmt.Println(cmd)
+
+		fmt.Printf("%s %s %s %s\n","mkfs.ext4", "-L", partitionName, partDisk)
+
+	} else if strings.ToLower(filesystem) == "swp" {
+		fmt.Printf("%s %s\n","mkswap", partDisk)
+		fmt.Printf("%s %s\n","swapon", partDisk)
+	}
+}
+
+func _setRootPart(isHomeSet, isFileSet, isCustomSet, isX64 bool, percentSize, restSize, diskFullSize int) (int, string, string, string, string) {
 	var rootSize, returnSize int
-	var sgString string
+	var sgString, selectedFS, partitionCode string
 	partitionName := "ROOT"
 
 	if isHomeSet && (isFileSet || isCustomSet) {
@@ -306,12 +327,19 @@ func _setRootPart(isHomeSet, isFileSet, isCustomSet bool, percentSize, restSize,
 		sgString = "0:0:0"
 	}
 
-	return returnSize, partitionName, sgString
+	selectedFS = _askPartitionFileSystem(partitionName)
+	if isX64 {
+		partitionCode = "8303"
+	} else {
+		partitionCode = "8304"
+	}
+
+	return returnSize, partitionName, sgString, selectedFS, partitionCode
 }
 
-func _setHomePart(isFileSet, isCustomSet bool, percentSize, restSize, diskFullSize int) (int, string, string) {
+func _setHomePart(isFileSet, isCustomSet bool, percentSize, restSize, diskFullSize int) (int, string, string, string, string) {
 	var homeSize, returnSize int
-	var sgString string
+	var sgString, selectedFS string
 	partitionName := "HOME"
 
 	if !isFileSet && !isCustomSet {
@@ -332,12 +360,14 @@ func _setHomePart(isFileSet, isCustomSet bool, percentSize, restSize, diskFullSi
 		}
 	}
 
-	return returnSize, partitionName, sgString
+	selectedFS = _askPartitionFileSystem(partitionName)
+	return returnSize, partitionName, sgString, selectedFS, "8302"
 }
 
-func _setFilePart(restSize int) (int, string, string) {
+func _setFilePart(restSize int) (int, string, string, string, string) {
 	partitionName := "FILES"
-	return restSize, partitionName, "0:0:0"
+	selectedFS := _askPartitionFileSystem(partitionName)
+	return restSize, partitionName, "0:0:0", selectedFS, "8300"
 }
 
 func _partHint(isFileSet bool) {
@@ -354,10 +384,11 @@ func _partHint(isFileSet bool) {
 	}
 }
 
+
 func _setMorePart(isFileSet bool, restSize, diskFullSize int) [][]string {
 	var partCommands [][]string
 	var returnSize int = restSize
-	var sgString string
+	var sgString, selectedFS string
 
 	helpers.ClearConsole()
 	_partHint(isFileSet)
@@ -370,16 +401,19 @@ func _setMorePart(isFileSet bool, restSize, diskFullSize int) [][]string {
 			helpers.ClearConsole()
 			_partHint(isFileSet)
 			_showRemainingDisk(returnSize)
-			partName := helpers.InputPrompt(fmt.Sprintf("What is the name of the partition %d?", (x+1)))
+			partName := _askPartitionName(fmt.Sprintf("What is the name of the partition %d?", (x+1)))
 			helpers.ClearConsole()
 
 			_partHint(isFileSet)
 			_showRemainingDisk(returnSize)
 			returnSize, sgString = _askSizeOfDisk(returnSize, diskFullSize, partName)
+			selectedFS = _askPartitionFileSystem(partName)
 
 			partInfos := []string{
 				partName,
 				sgString,
+				selectedFS,
+				"8300",
 			}
 
 			partCommands = append(partCommands, partInfos)
@@ -395,16 +429,19 @@ func _setMorePart(isFileSet bool, restSize, diskFullSize int) [][]string {
 			helpers.ClearConsole()
 			_partHint(isFileSet)
 			_showRemainingDisk(returnSize)
-			partName := helpers.InputPrompt(fmt.Sprintf("What is the name of the partition %d?", (x+1)))
+			partName := _askPartitionName(fmt.Sprintf("What is the name of the partition %d?", (x+1)))
 
 			helpers.ClearConsole()
 			_partHint(isFileSet)
 			_showRemainingDisk(returnSize)
 			returnSize, sgString = _askSizeOfDisk(returnSize, diskFullSize, partName)
+			selectedFS = _askPartitionFileSystem(partName)
 
 			partInfos := []string{
 				partName,
 				sgString,
+				selectedFS,
+				"8300",
 			}
 
 			partCommands = append(partCommands, partInfos)
@@ -413,10 +450,13 @@ func _setMorePart(isFileSet bool, restSize, diskFullSize int) [][]string {
 		_partHint(isFileSet)
 		_showRemainingDisk(returnSize)
 
-		partName := helpers.InputPrompt("What is the name of the last partition?")
+		partName := _askPartitionName("What is the name of the last partition?")
+		selectedFS = _askPartitionFileSystem(partName)
 		partInfos := []string{
 			partName,
 			"0:0:0",
+			selectedFS,
+			"8300",
 		}
 		partCommands = append(partCommands, partInfos)
 	}
@@ -425,14 +465,19 @@ func _setMorePart(isFileSet bool, restSize, diskFullSize int) [][]string {
 
 }
 
-
-func setDiskPartVars(cfgFile string, isSWAPSet bool, swapSize int) {
+func setDiskPartVars(cfgFile, disk string, isSWAPSet bool, swapSize int) [][]string {
 	helpers.ClearConsole()
 	helpers.PrintHeader("Startup", "Partitioning")
-	var homePart, filePart, morePart bool = false, false, false
-	var dSizePercent, restSize int
-	var rootLabel, homeLabel, filesLabel, sgRoot, sgHome, sgFiles string
-	var partLists [][]string
+	var (
+		homePart, filePart, morePart, isX64 bool = false, false, false, false
+		rootLabel, homeLabel, filesLabel,
+		sgRoot, sgHome, sgFiles,
+		rootFS, homeFS, filesFS,
+		rootPartCode, homePartCode, filesPartCode string
+		dSizePercent, restSize int
+		commandsOrder, partLists [][]string
+	)
+
 
 	dSize, err := strconv.Atoi(helpers.JsonGetter(cfgFile, "diskSize"))
 	helpers.Check(err)
@@ -450,6 +495,10 @@ func setDiskPartVars(cfgFile string, isSWAPSet bool, swapSize int) {
 		morePart = true
 	}
 
+	if helpers.YesNo("Are you running an 64-bit system?") {
+		isX64 = true
+	}
+
 	if dSize >= (500 * helpers.GB) {
 		dSizePercent = int(float64(dSize/helpers.GB) * 0.20)
 	} else {
@@ -459,14 +508,15 @@ func setDiskPartVars(cfgFile string, isSWAPSet bool, swapSize int) {
 	_restSize := dSize - dSizePercent
 	if isSWAPSet {
 		restSize = _restSize - swapSize
+	} else {
+		restSize = _restSize
 	}
 
-
 	if homePart {
-		restSize, rootLabel, sgRoot = _setRootPart(homePart, filePart, morePart, dSizePercent, restSize, dSize)
-		restSize, homeLabel, sgHome = _setHomePart(filePart, morePart, dSizePercent, restSize, dSize)
+		restSize, rootLabel, sgRoot, rootFS, rootPartCode = _setRootPart(homePart, filePart, morePart, isX64, dSizePercent, restSize, dSize)
+		restSize, homeLabel, sgHome, homeFS, homePartCode = _setHomePart(filePart, morePart, dSizePercent, restSize, dSize)
 		if filePart {
-			restSize, filesLabel, sgFiles = _setFilePart(restSize)
+			restSize, filesLabel, sgFiles, filesFS, filesPartCode = _setFilePart(restSize)
 			if morePart {
 				partLists = _setMorePart(filePart, restSize, dSize)
 			}
@@ -478,41 +528,141 @@ func setDiskPartVars(cfgFile string, isSWAPSet bool, swapSize int) {
 		}
 	} else {
 		if filePart {
-			restSize, rootLabel, sgRoot = _setRootPart(homePart, filePart, morePart, dSizePercent, restSize, dSize)
-			restSize, filesLabel, sgFiles = _setFilePart(restSize)
+			restSize, rootLabel, sgRoot, rootFS, rootPartCode = _setRootPart(homePart, filePart, morePart, isX64, dSizePercent, restSize, dSize)
+			restSize, filesLabel, sgFiles, filesFS, filesPartCode = _setFilePart(restSize)
 			if morePart {
 				partLists = _setMorePart(filePart, restSize, dSize)
 			}
 		} else {
 			if morePart {
-				restSize, rootLabel, sgRoot = _setRootPart(homePart, filePart, morePart, dSizePercent, restSize, dSize)
+				restSize, rootLabel, sgRoot, rootFS, rootPartCode = _setRootPart(homePart, filePart, morePart, isX64, dSizePercent, restSize, dSize)
 				partLists = _setMorePart(filePart, restSize, dSize)
 			} else {
-				restSize, rootLabel, sgRoot = _setRootPart(homePart, filePart, morePart, dSizePercent, restSize, dSize)
+				restSize, rootLabel, sgRoot, rootFS, rootPartCode = _setRootPart(homePart, filePart, morePart, isX64, dSizePercent, restSize, dSize)
 			}
 		}
 	}
 
-	fmt.Println(rootLabel, sgRoot)
-	fmt.Println(homeLabel, sgHome)
-	fmt.Println(filesLabel, sgFiles)
+	rootPartData := []string{
+		rootLabel,
+		sgRoot,
+		rootFS,
+		rootPartCode,
+	}
+
+	homePartData := []string{
+		homeLabel,
+		sgHome,
+		homeFS,
+		homePartCode,
+	}
+
+	filePartData := []string{
+		filesLabel,
+		sgFiles,
+		filesFS,
+		filesPartCode,
+	}
+
+	fmt.Println(rootPartData)
+	fmt.Println(homePartData)
+	fmt.Println(filePartData)
 	fmt.Println(partLists)
 
-/*
-DRIVES ORDER:
-0 - BOOT
-1 - SWAP
-2 - ROOT
-3 - HOME
-{...} - USER DRIVES
-LAST - FILES
-*/
+	if len(rootPartData) > 0 {
+		commandsOrder = append(commandsOrder, rootPartData)
+	}
+
+	if homePart && len(homePartData) > 0 {
+		commandsOrder = append(commandsOrder, homePartData)
+	}
+
+	if morePart && len(partLists) > 0 {
+		for _, v := range partLists {
+			if len(v) > 0 {
+				commandsOrder = append(commandsOrder, v)
+			}
+		}
+	}
+
+	if filePart && len(filePartData) > 0 {
+		commandsOrder = append(commandsOrder, filePartData)
+	}
+
+
+	fmt.Println(commandsOrder)
+
+	return commandsOrder
+}
+
+
+func partitionDisk(cfgFile string) {
+	var commandsOrder [][]string
+	isSWAPSet := false
+	swpSize := 0
+	bSys := helpers.JsonGetter(cfgFile, "bootSystem")
+	disk := helpers.JsonGetter(cfgFile, "disk")
+	if bSys == "BIOS" {
+		commandsOrder = append(commandsOrder, []string{"BIOSBOOT", "0:0:+1M", "none", "ef02"})
+	} else {
+		commandsOrder = append(commandsOrder, []string{"EFIBOOT", "0:0:+300M", "none", "ef00"})
+	}
+
+
+	memInfo := helpers.GetLine("/proc/meminfo", "MemTotal")
+	totalMem := helpers.ExtractNumbers(memInfo.(string))[0] * helpers.KiB
+
+	if totalMem < (8 * helpers.GiB) {
+		rSize, swapSize := _getRecommendedSwapSize(totalMem)
+		if rSize > 0 {
+			swpSize = rSize * helpers.GiB
+			fmt.Println("The script detected that you have less than 8GiB of RAM")
+			fmt.Printf("Based on your RAM size of %s, the script recommends a SWAP size of %s\n",
+			helpers.ByteSizeConverter(uint64(totalMem)), helpers.ByteSizeConverter(uint64(rSize * helpers.GiB)))
+			if helpers.YesNo("Would you like to create a SWAP partition?") {
+				commandsOrder = append(commandsOrder, []string{"SWAP", swapSize, "swp", "8200"})
+				isSWAPSet = true
+			}
+		}
+	}
+
+	fmt.Println(swpSize, isSWAPSet)
+	diskSize, err := strconv.Atoi(helpers.JsonGetter(cfgFile, "diskSize"))
+	helpers.Check(err)
+	if diskSize > (128 * helpers.GB) {
+		cOrd := setDiskPartVars(cfgFile, disk, isSWAPSet, swpSize)
+		commandsOrder = append(commandsOrder, cOrd...)
+	}
+
+
+
+
+	//cmd := helpers.RunShellCommand("partprobe", disk)
+	//fmt.Println(cmd)
+
+
+
+
+	if len(commandsOrder) > 0 {
+		for _, v := range commandsOrder {
+			if len(v) > 0 {
+				_createPartitions(v[0], v[1], v[3], disk)
+			}
+		}
+
+		for i, v := range commandsOrder {
+			x := i
+			if len(v) > 0 {
+				_createFileSystems(v[0], fmt.Sprintf("%s%d",disk,x+1), v[2])
+			}
+		}
+	}
+
 
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//endregion
+
 
 func PreInstall() {
 	var CONFIG_DIR string = fmt.Sprintf("%s/config", helpers.GetCurrDirPath())
@@ -520,23 +670,15 @@ func PreInstall() {
 	//fmt.Println(CONFIG_FILE)
 	fmt.Println("PreInstall")
 
-	//cISO := setCountryISO()
-	//helpers.JsonUpdater(CONFIG_FILE, "countryISO", cISO, false)
+	cISO := setCountryISO()
+	helpers.JsonUpdater(CONFIG_FILE, "countryISO", cISO, false)
 
-	// setTimeDate()
-	//formatDisk(CONFIG_FILE)
+	setTimeDate()
+	formatDisk(CONFIG_FILE)
 
-	//bootSys := bootSystem()
-	//helpers.JsonUpdater(CONFIG_FILE, "bootSystem", bootSys, false)
+	bootSys := bootSystem()
+	helpers.JsonUpdater(CONFIG_FILE, "bootSystem", bootSys, false)
 
-	//isSwapSet, swapSize := partitionDisk(CONFIG_FILE)
-
-	diskSize, err := strconv.Atoi(helpers.JsonGetter(CONFIG_FILE, "diskSize"))
-	helpers.Check(err)
-	fmt.Println(diskSize)
-	if diskSize > (128 * helpers.GB) {
-		//setDiskPartVars(CONFIG_FILE, isSwapSet, swapSize)
-		setDiskPartVars(CONFIG_FILE, true, (1 * helpers.GiB))
-	}
+	partitionDisk(CONFIG_FILE)
 
 }

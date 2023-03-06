@@ -92,7 +92,7 @@ func main() {
 	//z := "300M"
 	//helpers.ParseSizeString(z)
 	if helpers.YesNo("Can we proceed to the installation?") {
-		//sections.Startupp()
+		sections.Startupp()
 		sections.PreInstall()
 		//sections.BaseInstall()
 		//sections.UserConfig()
