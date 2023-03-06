@@ -6,20 +6,30 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"log"
 	"math"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/manifoldco/promptui"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
-	"github.com/manifoldco/promptui"
 )
+
+// Automates the process of running shell commands
+func RunShellCommand(name string, args ...string) string {
+	cmd := exec.Command(name, args...)
+	cmd.Stdin = os.Stdin
+	out, err := cmd.Output()
+	Check(err)
+	return string(out)
+}
+
 // Function that prints a [DEBUG] statement
 func DebugPrint(variable interface{}) {
 	fmt.Printf("[DEBUG] %s\t=\t%s\n", variable, variable)
@@ -61,26 +71,15 @@ func CenterSprint(text, ghostText string) string {
 
 // Uses the 'stty' UNIX command to get terminal size
 func GetTerminalSize() (int, int) {
-	cmd := exec.Command("stty", "size")
-	cmd.Stdin = os.Stdin
-	out, err := cmd.Output()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	s := string(out)
+	s := RunShellCommand("stty", "size")
 	s = strings.TrimSpace(s)
 	sArr := strings.Split(s, " ")
 
 	height, err := strconv.Atoi(sArr[0])
-	if err != nil {
-		log.Fatal(err)
-	}
+	Check(err)
 
 	width, err := strconv.Atoi(sArr[1])
-	if err != nil {
-		log.Fatal(err)
-	}
+	Check(err)
 	return height, width
 }
 
@@ -118,9 +117,7 @@ func PromptReadPassword(prompt string) string {
 	}
 	result, err := inputPrompt.Run()
 
-	if err != nil {
-		panic(err)
-	}
+	Check(err)
 	return result
 }
 
@@ -128,9 +125,7 @@ func PromptReadPassword(prompt string) string {
 func ReplaceFileLine(file, line, replace string) interface{} {
 	var lineFound = true
 	readFile, err := os.ReadFile(file)
-	if err != nil {
-		panic(err)
-	}
+	Check(err)
 
 	lines := strings.Split(string(readFile), "\n")
 	for i, currLine := range lines {
@@ -142,9 +137,7 @@ func ReplaceFileLine(file, line, replace string) interface{} {
 	}
 	output := strings.Join(lines, "\n")
 	err = os.WriteFile(file, []byte(output), 0644)
-	if err != nil {
-		panic(err)
-	}
+	Check(err)
 	if !lineFound {
 		return lineFound
 	} else {
@@ -152,49 +145,49 @@ func ReplaceFileLine(file, line, replace string) interface{} {
 	}
 }
 
+func GetLine(file, key string) interface{} {
+	readFile, err := os.ReadFile(file)
+	Check(err)
+	lines := strings.Split(string(readFile), "\n")
+	for _, currLine := range lines {
+		if strings.Contains(currLine, key) {
+			return string(currLine)
+		}
+	}
+	return nil
+}
+
 // Append data to a JSON file.
 func JsonAppender(file string, attribute string, value interface{}) {
 	var data []map[string]interface{}
 	content, err := os.ReadFile(file)
-	if err != nil {
-		panic(err)
-	}
+	Check(err)
 	json.Unmarshal(content, &data)
 	new_data := &map[string]interface{} {
 		attribute: value,
 	}
 	data = append(data, *new_data)
 	dataBytes, err := json.Marshal(data)
-	if err != nil {
-		panic(err)
-	}
+	Check(err)
 
 	err = os.WriteFile(file, dataBytes, 0644)
-	if err != nil {
-		panic(err)
-	}
+	Check(err)
 }
 
 // Updates data in a JSON file.
 func JsonUpdater(file string, attribute string, value interface{}, returnValue bool) interface{} {
 	file_stats, err := os.Stat(file)
-	if err != nil {
-		panic(err)
-	}
+	Check(err)
 
 	content, err := os.ReadFile(file)
-	if err != nil {
-		panic(err)
-	}
+	Check(err)
 	val := gjson.Get(string(content), attribute)
 	if val.Exists() {
 		sjson.Delete(string(content), attribute)
 	}
 
 	_val, err := sjson.Set(string(content), attribute, value)
-	if err != nil {
-		panic(err)
-	}
+	Check(err)
 
 	if file_stats.Size() == 0 {
 		os.WriteFile(file, []byte(_val), 0644)
@@ -213,22 +206,23 @@ func JsonUpdater(file string, attribute string, value interface{}, returnValue b
 	}
 }
 
+func JsonGetter(file, path string) string {
+	content, err := os.ReadFile(file)
+	Check(err)
+	res := gjson.Get(string(content), path)
+	return res.Str
+}
+
 // CURL implementation.
 func CurlResponse(URL string) string {
 	req, err := http.Get(URL)
-	if err != nil {
-		panic(err)
-	}
+	Check(err)
 	defer req.Body.Close()
 	res, err := http.DefaultClient.Do(req.Request)
-	if err != nil {
-		panic(err)
-	}
+	Check(err)
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		panic(err)
-	}
+	Check(err)
 
 	return string(body)
 }
@@ -237,7 +231,7 @@ func CurlResponse(URL string) string {
 func FindFiles(root, fileExtension string, secondExtension string, onlyFileName bool) []string {
 	var _tempList []string
 	filepath.WalkDir(root, func(path string, data fs.DirEntry, err error) error {
-		if err != nil {return err}
+		Check(err)
 		if filepath.Ext(data.Name()) == fileExtension {
 			if !onlyFileName {
 				_tempList = append(_tempList, path)
@@ -276,9 +270,7 @@ func YesNo(promptString string) bool {
 		HideHelp: true,
     }
     _, result, err := prompt.Run()
-    if err != nil {
-        log.Fatalf("Prompt failed %v\n", err)
-    }
+    Check(err)
     return result == "Yes"
 }
 
@@ -295,9 +287,7 @@ func PromptSelect(promptString string, itemsList []string) (int, string) {
 		HideHelp: true,
 	}
 	numRes, strRes, err := prompt.Run()
-	if err != nil {
-		panic(err)
-	}
+	Check(err)
 
 	return numRes, strRes
 }
@@ -309,9 +299,7 @@ func InputPrompt(inputPrompt string) string {
 	}
 
 	result, err := prompt.Run()
-	if err != nil {
-		panic(err)
-	}
+	Check(err)
 
 	return result
 }
@@ -341,6 +329,78 @@ func PrintHeader(sectionText, stepText string) {
 		hr_line += BoxHorizontalChar()
 	}
 
-	fmt.Printf("%s %s %s\n", sectionText, BoxVerticalChar(), stepText)
-	fmt.Println(hr_line)
+	fmt.Printf("%s %s %s\n", PrintBlue(sectionText), PrintBlack(BoxVerticalChar()), stepText)
+	fmt.Println(PrintBlack(hr_line))
+}
+
+func CopyFile(sourceFile, destination string) {
+	sourceFileStatus, err := os.Stat(sourceFile)
+	Check(err)
+	if !sourceFileStatus.Mode().IsRegular() {
+		panic(fmt.Errorf("%s is not a regular file", sourceFile))
+	}
+	source, err := os.Open(sourceFile)
+	Check(err)
+	defer source.Close()
+	dest, err := os.Create(destination)
+	Check(err)
+	defer dest.Close()
+	nBytes, err := io.Copy(dest, source)
+	Check(err)
+	fmt.Printf("Copied %s from %s to %s\n", ByteSizeConverter(uint64(nBytes)), sourceFile, destination)
+}
+
+func ExtractNumbers(text string) []int {
+	re := regexp.MustCompile("[0-9]+")
+	res := re.FindAllString(text, -1)
+	var resList []int
+	for _, i := range res {
+		x, err := strconv.Atoi(i)
+		Check(err)
+		resList = append(resList, x)
+	}
+	return resList
+}
+
+func ExtractLetters(text string) []string {
+	re := regexp.MustCompile("[a-z]+")
+	res := re.FindAllString(strings.ToLower(text), -1)
+	return res
+}
+
+func ParseSizeString(text string) string {
+	var resString string
+	numSize := ExtractNumbers(text)[0]
+	typeSize := ExtractLetters(text)[0]
+
+	switch strings.ToLower(typeSize) {
+	case "k", "ki", "kb", "kib":
+		resString = fmt.Sprintf("%dKiB", numSize)
+	case "m", "mi", "mb", "mib":
+		resString = fmt.Sprintf("%dMiB", numSize)
+	case "g", "gi", "gb", "gib":
+		resString = fmt.Sprintf("%dGiB", numSize)
+	}
+	return resString
+}
+
+func ConvertToByte(text string) int {
+	var resSize int
+	numSize := ExtractNumbers(text)[0]
+	typeSize := ExtractLetters(text)[0]
+
+	switch strings.ToLower(typeSize) {
+	case "k", "ki", "kb", "kib":
+		resSize = numSize * KiB
+	case "m", "mi", "mb", "mib":
+		resSize = numSize * MiB
+	case "g", "gi", "gb", "gib":
+		resSize = numSize * GiB
+	}
+
+	return resSize
+}
+
+func RoundMultiple(number, multiple float64) float64 {
+	return multiple * math.Round(number/multiple)
 }

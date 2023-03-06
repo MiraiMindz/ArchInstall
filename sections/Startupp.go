@@ -7,7 +7,6 @@ EXECUTE  IN THE MAIN SCRIPT  ON THE INSTALLATION PROCESS, AND  TO DO THAT I NEED
 TO CREATE ANOTHER MODULE. THEY ARE IDENTICAL BTW. - MIRAI
 *******************************************************************************/
 
-
 import (
 	"ArchInstall/helpers"
 	"fmt"
@@ -18,8 +17,6 @@ import (
 	"github.com/jaypipes/ghw"
 )
 
-const sectionName string = "Startup"
-
 func createConfigFile(filePath string) {
 	file_loc := fmt.Sprintf("%s/config.json", filePath)
 	if !helpers.CheckFileExists(file_loc) {
@@ -27,18 +24,13 @@ func createConfigFile(filePath string) {
 			os.Mkdir(filePath, 0755)
 		}
 		err := os.WriteFile(file_loc, []byte(""), 0644)
-		if err != nil {
-			panic(err)
-		}
+		helpers.Check(err)
 	}
 }
 
 func checkRootUser() {
 	currUser, err := user.Current()
-	if err != nil {
-		panic(err)
-	}
-
+	helpers.Check(err)
 	if currUser.Uid != "0" {
 		panic("Root user is required to run this script.")
 	}
@@ -65,7 +57,7 @@ func checks() {
 func setPassword() string {
 	var passwd1, passwd2 string
 	helpers.ClearConsole()
-	helpers.PrintHeader(sectionName, "Password")
+	helpers.PrintHeader("Startup", "Password")
 
 	passwd1 = helpers.PromptReadPassword("Enter your Password")
 	passwd2 = helpers.PromptReadPassword("Re-type your Password")
@@ -82,14 +74,12 @@ func setPassword() string {
 func setTimeZone() string {
 	response := helpers.CurlResponse("https://ipapi.co/timezone")
 	helpers.ClearConsole()
-	helpers.PrintHeader(sectionName, "Time Zone")
+	helpers.PrintHeader("Startup", "Time Zone")
 
 	if helpers.YesNo(fmt.Sprintf("TimeZone detected to be %s is this correct?", response)) {
 		return response
 	} else {
-		var userTZ string
-		fmt.Print("Enter your desired timezone e.g: Europe/London: ")
-		fmt.Scanf("%s", &userTZ)
+		userTZ := helpers.InputPrompt("Enter your desired timezone e.g: Europe/London")
 		fmt.Println(userTZ)
 		return userTZ
 	}
@@ -102,7 +92,7 @@ func keyboardLayout() string {
 		keyLists = append(keyLists, file)
 	}
 	helpers.ClearConsole()
-	helpers.PrintHeader(sectionName, "Keyboard Layout")
+	helpers.PrintHeader("Startup", "Keyboard Layout")
 
 	_, returnValue = helpers.PromptSelect("Select your keyboard layout", keyLists)
 
@@ -113,18 +103,16 @@ func keyboardLayout() string {
 	return returnValue
 }
 
-func setDiskVars() string {
+func setDiskVars() (string, uint64) {
 	var diskList []*ghw.Disk
 	var selectedDisk *ghw.Disk
 	var textDiskList []string
 
 	bInfo, err := ghw.Block()
-	if err != nil {
-		panic(err)
-	}
+	helpers.Check(err)
 
 	helpers.ClearConsole()
-	helpers.PrintHeader(sectionName, "Disk")
+	helpers.PrintHeader("Startup", "Disk")
 
 	for _, disk := range bInfo.Disks {
 		if disk.DriveType.String() == "HDD" || disk.DriveType.String() == "SSD" {
@@ -155,12 +143,12 @@ func setDiskVars() string {
 		setDiskVars()
 	}
 
-	return selectedDisk.Name
+	return fmt.Sprintf("/dev/%s", selectedDisk.Name), selectedDisk.SizeBytes
 }
 
 func userInfo() (string, string) {
 	helpers.ClearConsole()
-	helpers.PrintHeader(sectionName, "User Info")
+	helpers.PrintHeader("Startup", "User Info")
 
 	uName := helpers.InputPrompt("Enter your username")
 	userName := strings.ToLower(uName)
@@ -180,13 +168,16 @@ func userInfo() (string, string) {
 
 func aurHelper() string {
 	helpers.ClearConsole()
-	helpers.PrintHeader(sectionName, "AUR Helpers")
+	helpers.PrintHeader("Startup", "AUR Helpers")
 
 	var aurHelpersList = []string{"aura", "nix", "pacaur", "paru", "picaur", "trizen", "yay", "none"}
 	fmt.Println("select \"none\" if you don't want any or \"nix\" to use the Nix Package Manager.")
 	_, answer := helpers.PromptSelect("Select your AUR Helper", aurHelpersList)
 	return answer
 }
+
+
+
 
 func Startupp() {
 	var CONFIG_DIR string = fmt.Sprintf("%s/config", helpers.GetCurrDirPath())
@@ -208,9 +199,10 @@ func Startupp() {
 	keyLayout := keyboardLayout()
 	helpers.JsonUpdater(CONFIG_FILE, "keyboardLayout", keyLayout, false)
 
-	disk := setDiskVars()
+	disk, diskSize := setDiskVars()
 	helpers.JsonUpdater(CONFIG_FILE, "mountOptions", "defaults", false)
 	helpers.JsonUpdater(CONFIG_FILE, "disk", disk, false)
+	helpers.JsonUpdater(CONFIG_FILE, "diskSize", fmt.Sprint(diskSize), false)
 
 	userName, hostName := userInfo()
 	helpers.JsonUpdater(CONFIG_FILE, "userName", userName, false)
