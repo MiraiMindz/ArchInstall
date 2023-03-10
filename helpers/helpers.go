@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/fs"
 	"math"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -14,42 +15,49 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
-	"github.com/fatih/color"
 	"github.com/manifoldco/promptui"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 )
 
 // Automates the process of running shell commands
-func RunShellCommand(name string, args ...string) string {
-	cmd := exec.Command(name, args...)
-	cmd.Stdin = os.Stdin
-	out, err := cmd.Output()
-	Check(err)
-	return string(out)
+func RunShellCommand( testMode bool, name string, args ...string) string {
+	if testMode {
+		x := []string{name}
+		x = append(x, args...)
+		fmt.Println(x)
+		return ""
+	} else {
+		cmd := exec.Command(name, args...)
+		cmd.Stdin = os.Stdin
+		out, err := cmd.Output()
+		Check(err)
+		return string(out)
+	}
 }
 
 // Function that prints a [DEBUG] statement
-func DebugPrint(variable interface{}) {
-	fmt.Printf("[DEBUG] %s\t=\t%s\n", variable, variable)
-}
+// func DebugPrint(variable interface{}) {
+// 	fmt.Printf("[DEBUG] %s\t=\t%s\n", variable, variable)
+// }
 
 // Used to show the current step in the installation
-func StepPrint(step string, stpCnt int8) {
-	magenta := color.New(color.FgMagenta).SprintFunc()
-	stpStr := ""
-	if stpCnt < 10 {
-		stpStr = fmt.Sprintf("0%v", stpCnt)
-	} else {
-		stpStr = fmt.Sprint(stpCnt)
-	}
-	base_step_string := "[" + stpStr + "]"
-	colored_step_string := magenta(base_step_string)
+// func StepPrint(step string, stpCnt int8) {
+// 	magenta := color.New(color.FgMagenta).SprintFunc()
+// 	stpStr := ""
+// 	if stpCnt < 10 {
+// 		stpStr = fmt.Sprintf("0%v", stpCnt)
+// 	} else {
+// 		stpStr = fmt.Sprint(stpCnt)
+// 	}
+// 	base_step_string := "[" + stpStr + "]"
+// 	colored_step_string := magenta(base_step_string)
 
-	final_string := colored_step_string + " " + step
-	fmt.Println(final_string)
-}
+// 	final_string := colored_step_string + " " + step
+// 	fmt.Println(final_string)
+// }
 
 // Returns a string with the text centralized.
 func CenterSprint(text, ghostText string) string {
@@ -71,7 +79,7 @@ func CenterSprint(text, ghostText string) string {
 
 // Uses the 'stty' UNIX command to get terminal size
 func GetTerminalSize() (int, int) {
-	s := RunShellCommand("stty", "size")
+	s := RunShellCommand(false, "stty", "size")
 	s = strings.TrimSpace(s)
 	sArr := strings.Split(s, " ")
 
@@ -265,13 +273,13 @@ func IsNumeric(s string) bool {
 // Prompts for a yes/no decision.
 func YesNo(promptString string) bool {
     prompt := promptui.Select{
-        Label: fmt.Sprintf("%s [Yes/No]", promptString),
-        Items: []string{"Yes", "No"},
+        Label: fmt.Sprintf("%s [%s/%s]", promptString, PrintGreen("Yes"),  PrintRed("No")),
+        Items: []string{PrintGreen("Yes"), PrintRed("No")},
 		HideHelp: true,
     }
     _, result, err := prompt.Run()
     Check(err)
-    return result == "Yes"
+    return result == PrintGreen("Yes")
 }
 
 // Clears the console in UNIX like systems.
@@ -296,6 +304,18 @@ func PromptSelect(promptString string, itemsList []string) (int, string) {
 func InputPrompt(inputPrompt string) string {
 	prompt := promptui.Prompt{
 		Label: inputPrompt,
+	}
+
+	result, err := prompt.Run()
+	Check(err)
+
+	return result
+}
+
+func InputDefaultPrompt(inputPrompt, defaultValue string) string {
+	prompt := promptui.Prompt{
+		Label: inputPrompt,
+		Default: defaultValue,
 	}
 
 	result, err := prompt.Run()
@@ -329,8 +349,8 @@ func PrintHeader(sectionText, stepText string) {
 		hr_line += BoxHorizontalChar()
 	}
 
-	fmt.Printf("%s %s %s\n", PrintBlue(sectionText), PrintBlack(BoxVerticalChar()), stepText)
-	fmt.Println(PrintBlack(hr_line))
+	fmt.Printf("%s %s %s\n", PrintBlue(sectionText), PrintHiBlack(BoxVerticalChar()), stepText)
+	fmt.Println(PrintHiBlack(hr_line))
 }
 
 func CopyFile(sourceFile, destination string) {
@@ -349,6 +369,7 @@ func CopyFile(sourceFile, destination string) {
 	Check(err)
 	fmt.Printf("Copied %s from %s to %s\n", ByteSizeConverter(uint64(nBytes)), sourceFile, destination)
 }
+
 
 func ExtractNumbers(text string) []int {
 	re := regexp.MustCompile("[0-9]+")
@@ -408,4 +429,88 @@ func ConvertToByte(text string) int {
 
 func RoundMultiple(number, multiple float64) float64 {
 	return multiple * math.Round(number/multiple)
+}
+
+
+func IsValidHostname(hostname string) bool {
+	if net.ParseIP(hostname) != nil {
+		return false
+	}
+
+	if len(hostname) < 1 || len(hostname) > 255 {
+		return false
+	}
+
+	if hostname[len(hostname)-1] == '.' {
+		hostname = hostname[:len(hostname)-1]
+		return false
+	}
+
+	parts := strings.Split(hostname, ".")
+	for _, part := range parts {
+		if len(part) < 1 || len(part) > 63 {
+			return false
+		}
+
+		if part[0] == '-' || part[len(part)-1] == '-' {
+			return false
+		}
+
+		for i := 0; i < len(part); i++ {
+			if !((part[i] >= 'a' && part[i] <= 'z') || (part[i] >= 'A' && part[i] <= 'Z') || (part[i] >= '0' && part[i] <= '9') || part[i] == '-') {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
+
+func IsValidLinuxUsername(username string) bool {
+	if net.ParseIP(username) != nil {
+		return false
+	}
+
+	if len(username) < 1 || len(username) > 32 {
+		return false
+	}
+
+	if username[0] == '-' || username[0] == '.' {
+		return false
+	}
+
+	for i := 0; i < len(username); i++ {
+		if !((username[i] >= 'a' && username[i] <= 'z') || username[i] == '_' || (i > 0 && ((username[i] >= '0' && username[i] <= '9') || username[i] == '-' || username[i] == '_'))) {
+			return false
+		}
+	}
+
+	if username[len(username)-1] == '$' {
+		return len(username) <= 31
+	}
+
+	return true
+}
+
+func CountDown(seconds int, prompt string) {
+	for {
+		if seconds <= 0 {
+			break
+		} else {
+			if seconds > 1 {
+				fmt.Println(PrintHiBlack(fmt.Sprintf("%s in %d Seconds...", prompt, seconds)))
+			} else {
+				fmt.Println(PrintHiBlack(fmt.Sprintf("%s in %d Second...", prompt, seconds)))
+			}
+			time.Sleep(1 * time.Second)
+			seconds--
+		}
+	}
+}
+
+func WriteToFile(filePath, content string, permissions fs.FileMode) {
+	err := os.WriteFile(filePath, []byte(content), permissions)
+	Check(err)
+	fmt.Printf("Written %d bytes to %s\n", len(content), filePath)
 }

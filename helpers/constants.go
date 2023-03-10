@@ -23,3 +23,5 @@ const (
 	ZB = 1000 * EB
 	YB = 1000 * ZB
 )
+
+const COMMANDS_TEST_MODE bool = true

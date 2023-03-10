@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"os"
 	"os/user"
+	"regexp"
 	"strings"
 
 	"github.com/jaypipes/ghw"
@@ -103,6 +104,13 @@ func keyboardLayout() string {
 	return returnValue
 }
 
+func loadKeyboardLayout(cfgFile string) {
+	keyLayout := helpers.JsonGetter(cfgFile, "keyboardLayout")
+	if helpers.YesNo(fmt.Sprintf("Do you want to load the keyboard layout %s?", keyLayout)) {
+		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "loadkeys", keyLayout)
+	}
+}
+
 func setDiskVars() (string, uint64) {
 	var diskList []*ghw.Disk
 	var selectedDisk *ghw.Disk
@@ -146,24 +154,79 @@ func setDiskVars() (string, uint64) {
 	return fmt.Sprintf("/dev/%s", selectedDisk.Name), selectedDisk.SizeBytes
 }
 
+func _readName(prompt string) string {
+	uName := helpers.InputPrompt(prompt)
+	usrNm := strings.ToLower(uName)
+	return usrNm
+}
+
+func _askUserName() string {
+	userNamePattern := "^[a-z_]([a-z0-9_-]{0,31}|[a-z0-9_-]{0,30}\\$)$"
+
+	usrNm := _readName("Enter your username")
+	userNameMatches, _ := regexp.MatchString(userNamePattern, usrNm)
+
+	if !userNameMatches {
+		helpers.ClearConsole()
+		helpers.PrintHeader("Startup", "User Info")
+		fmt.Println(helpers.PrintError("User name doesn't conforms the UNIX standards."))
+		usrNm = _askUserName()
+	}
+
+	return usrNm
+}
+
+
+func _askHostName() string {
+	hstNm := _readName("Enter your hostname")
+
+	hostNameMatches := helpers.IsValidHostname(hstNm)
+
+	if !hostNameMatches {
+		helpers.ClearConsole()
+		helpers.PrintHeader("Startup", "User Info")
+		fmt.Println(helpers.PrintError("Host name doesn't conforms the UNIX standards."))
+		hstNm = _askHostName()
+	}
+
+	return hstNm
+}
+
 func userInfo() (string, string) {
+	var userName, hostName string
 	helpers.ClearConsole()
 	helpers.PrintHeader("Startup", "User Info")
+	userName = _askUserName()
+	helpers.ClearConsole()
+	helpers.PrintHeader("Startup", "User Info")
+	hostName = _askHostName()
 
-	uName := helpers.InputPrompt("Enter your username")
-	userName := strings.ToLower(uName)
-	hName := helpers.InputPrompt("Enter your hostname")
-	hostName := strings.ToLower(hName)
-
+	helpers.ClearConsole()
+	helpers.PrintHeader("Startup", "User Info")
 	fmt.Println("Note: the username and hostname are automatically converted to lowercase.")
 	fmt.Printf("USERNAME: %s\nHOSTNAME: %s\n", userName, hostName)
 	if !helpers.YesNo("Is this correct?") {
 		userName, hostName = userInfo()
 	}
 
-
 	return userName, hostName
+}
 
+func rootPasswd() string {
+	var passwd1, passwd2 string
+	helpers.ClearConsole()
+	helpers.PrintHeader("Startup", "ROOT Password")
+
+	passwd1 = helpers.PromptReadPassword("Enter the ROOT Password")
+	passwd2 = helpers.PromptReadPassword("Re-type the ROOT Password")
+	if passwd1 == passwd2 {
+		fmt.Println("Passwords do match.")
+	} else {
+		fmt.Println("Passwords do not match.")
+		setPassword()
+	}
+
+	return passwd1
 }
 
 func aurHelper() string {
@@ -176,9 +239,6 @@ func aurHelper() string {
 	return answer
 }
 
-
-
-
 func Startupp() {
 	var CONFIG_DIR string = fmt.Sprintf("%s/config", helpers.GetCurrDirPath())
 
@@ -189,15 +249,14 @@ func Startupp() {
 	createConfigFile(CONFIG_DIR)
 	var CONFIG_FILE string = fmt.Sprintf("%s/config.json", CONFIG_DIR)
 
-
-	passwd := setPassword()
-	helpers.JsonUpdater(CONFIG_FILE, "userPassword", passwd, false)
-
-	timeZone := setTimeZone()
-	helpers.JsonUpdater(CONFIG_FILE, "timeZone", timeZone, false)
+	helpers.JsonUpdater(CONFIG_FILE, "installLocation", helpers.GetCurrDirPath(), false)
 
 	keyLayout := keyboardLayout()
 	helpers.JsonUpdater(CONFIG_FILE, "keyboardLayout", keyLayout, false)
+	loadKeyboardLayout(CONFIG_FILE)
+
+	timeZone := setTimeZone()
+	helpers.JsonUpdater(CONFIG_FILE, "timeZone", timeZone, false)
 
 	disk, diskSize := setDiskVars()
 	helpers.JsonUpdater(CONFIG_FILE, "mountOptions", "defaults", false)
@@ -207,6 +266,12 @@ func Startupp() {
 	userName, hostName := userInfo()
 	helpers.JsonUpdater(CONFIG_FILE, "userName", userName, false)
 	helpers.JsonUpdater(CONFIG_FILE, "hostName", hostName, false)
+
+	passwd := setPassword()
+	helpers.JsonUpdater(CONFIG_FILE, "userPassword", passwd, false)
+
+	rPasswd := rootPasswd()
+	helpers.JsonUpdater(CONFIG_FILE, "rootPassword", rPasswd, false)
 
 	aurH := aurHelper()
 	helpers.JsonUpdater(CONFIG_FILE, "aurHelper", aurH, false)

@@ -8,3 +8,4 @@ set +a
 
 
 ( bash $SCRIPTS_DIR/execStartup.sh )
+( bash $SCRIPTS_DIR/execPreInstall.sh )

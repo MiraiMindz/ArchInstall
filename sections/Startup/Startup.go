@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/user"
+	"regexp"
 	"strings"
 
 	"github.com/jaypipes/ghw"
@@ -19,18 +20,13 @@ func createConfigFile(filePath string) {
 			os.Mkdir(filePath, 0755)
 		}
 		err := os.WriteFile(file_loc, []byte(""), 0644)
-		if err != nil {
-			panic(err)
-		}
+		helpers.Check(err)
 	}
 }
 
 func checkRootUser() {
 	currUser, err := user.Current()
-	if err != nil {
-		panic(err)
-	}
-
+	helpers.Check(err)
 	if currUser.Uid != "0" {
 		panic("Root user is required to run this script.")
 	}
@@ -57,7 +53,7 @@ func checks() {
 func setPassword() string {
 	var passwd1, passwd2 string
 	helpers.ClearConsole()
-	helpers.PrintHeader(sectionName, "Password")
+	helpers.PrintHeader("Startup", "Password")
 
 	passwd1 = helpers.PromptReadPassword("Enter your Password")
 	passwd2 = helpers.PromptReadPassword("Re-type your Password")
@@ -74,14 +70,12 @@ func setPassword() string {
 func setTimeZone() string {
 	response := helpers.CurlResponse("https://ipapi.co/timezone")
 	helpers.ClearConsole()
-	helpers.PrintHeader(sectionName, "Time Zone")
+	helpers.PrintHeader("Startup", "Time Zone")
 
 	if helpers.YesNo(fmt.Sprintf("TimeZone detected to be %s is this correct?", response)) {
 		return response
 	} else {
-		var userTZ string
-		fmt.Print("Enter your desired timezone e.g: Europe/London: ")
-		fmt.Scanf("%s", &userTZ)
+		userTZ := helpers.InputPrompt("Enter your desired timezone e.g: Europe/London")
 		fmt.Println(userTZ)
 		return userTZ
 	}
@@ -94,7 +88,7 @@ func keyboardLayout() string {
 		keyLists = append(keyLists, file)
 	}
 	helpers.ClearConsole()
-	helpers.PrintHeader(sectionName, "Keyboard Layout")
+	helpers.PrintHeader("Startup", "Keyboard Layout")
 
 	_, returnValue = helpers.PromptSelect("Select your keyboard layout", keyLists)
 
@@ -105,18 +99,23 @@ func keyboardLayout() string {
 	return returnValue
 }
 
-func setDiskVars() string {
+func loadKeyboardLayout(cfgFile string) {
+	keyLayout := helpers.JsonGetter(cfgFile, "keyboardLayout")
+	if helpers.YesNo(fmt.Sprintf("Do you want to load the keyboard layout %s?", keyLayout)) {
+		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "loadkeys", keyLayout)
+	}
+}
+
+func setDiskVars() (string, uint64) {
 	var diskList []*ghw.Disk
 	var selectedDisk *ghw.Disk
 	var textDiskList []string
 
 	bInfo, err := ghw.Block()
-	if err != nil {
-		panic(err)
-	}
+	helpers.Check(err)
 
 	helpers.ClearConsole()
-	helpers.PrintHeader(sectionName, "Disk")
+	helpers.PrintHeader("Startup", "Disk")
 
 	for _, disk := range bInfo.Disks {
 		if disk.DriveType.String() == "HDD" || disk.DriveType.String() == "SSD" {
@@ -147,32 +146,87 @@ func setDiskVars() string {
 		setDiskVars()
 	}
 
-	return selectedDisk.Name
+	return fmt.Sprintf("/dev/%s", selectedDisk.Name), selectedDisk.SizeBytes
+}
+
+func _readName(prompt string) string {
+	uName := helpers.InputPrompt(prompt)
+	usrNm := strings.ToLower(uName)
+	return usrNm
+}
+
+func _askUserName() string {
+	userNamePattern := "^[a-z_]([a-z0-9_-]{0,31}|[a-z0-9_-]{0,30}\\$)$"
+
+	usrNm := _readName("Enter your username")
+	userNameMatches, _ := regexp.MatchString(userNamePattern, usrNm)
+
+	if !userNameMatches {
+		helpers.ClearConsole()
+		helpers.PrintHeader("Startup", "User Info")
+		fmt.Println(helpers.PrintError("User name doesn't conforms the UNIX standards."))
+		usrNm = _askUserName()
+	}
+
+	return usrNm
+}
+
+
+func _askHostName() string {
+	hstNm := _readName("Enter your hostname")
+
+	hostNameMatches := helpers.IsValidHostname(hstNm)
+
+	if !hostNameMatches {
+		helpers.ClearConsole()
+		helpers.PrintHeader("Startup", "User Info")
+		fmt.Println(helpers.PrintError("Host name doesn't conforms the UNIX standards."))
+		hstNm = _askHostName()
+	}
+
+	return hstNm
 }
 
 func userInfo() (string, string) {
+	var userName, hostName string
 	helpers.ClearConsole()
-	helpers.PrintHeader(sectionName, "User Info")
+	helpers.PrintHeader("Startup", "User Info")
+	userName = _askUserName()
+	helpers.ClearConsole()
+	helpers.PrintHeader("Startup", "User Info")
+	hostName = _askHostName()
 
-	uName := helpers.InputPrompt("Enter your username")
-	userName := strings.ToLower(uName)
-	hName := helpers.InputPrompt("Enter your hostname")
-	hostName := strings.ToLower(hName)
-
+	helpers.ClearConsole()
+	helpers.PrintHeader("Startup", "User Info")
 	fmt.Println("Note: the username and hostname are automatically converted to lowercase.")
 	fmt.Printf("USERNAME: %s\nHOSTNAME: %s\n", userName, hostName)
 	if !helpers.YesNo("Is this correct?") {
 		userName, hostName = userInfo()
 	}
 
-
 	return userName, hostName
+}
 
+func rootPasswd() string {
+	var passwd1, passwd2 string
+	helpers.ClearConsole()
+	helpers.PrintHeader("Startup", "ROOT Password")
+
+	passwd1 = helpers.PromptReadPassword("Enter the ROOT Password")
+	passwd2 = helpers.PromptReadPassword("Re-type the ROOT Password")
+	if passwd1 == passwd2 {
+		fmt.Println("Passwords do match.")
+	} else {
+		fmt.Println("Passwords do not match.")
+		setPassword()
+	}
+
+	return passwd1
 }
 
 func aurHelper() string {
 	helpers.ClearConsole()
-	helpers.PrintHeader(sectionName, "AUR Helpers")
+	helpers.PrintHeader("Startup", "AUR Helpers")
 
 	var aurHelpersList = []string{"aura", "nix", "pacaur", "paru", "picaur", "trizen", "yay", "none"}
 	fmt.Println("select \"none\" if you don't want any or \"nix\" to use the Nix Package Manager.")
@@ -190,23 +244,29 @@ func main() {
 	createConfigFile(CONFIG_DIR)
 	var CONFIG_FILE string = fmt.Sprintf("%s/config.json", CONFIG_DIR)
 
+	helpers.JsonUpdater(CONFIG_FILE, "installLocation", helpers.GetCurrDirPath(), false)
 
-	passwd := setPassword()
-	helpers.JsonUpdater(CONFIG_FILE, "userPassword", passwd, false)
+	keyLayout := keyboardLayout()
+	helpers.JsonUpdater(CONFIG_FILE, "keyboardLayout", keyLayout, false)
+	loadKeyboardLayout(CONFIG_FILE)
 
 	timeZone := setTimeZone()
 	helpers.JsonUpdater(CONFIG_FILE, "timeZone", timeZone, false)
 
-	keyLayout := keyboardLayout()
-	helpers.JsonUpdater(CONFIG_FILE, "keyboardLayout", keyLayout, false)
-
-	disk := setDiskVars()
+	disk, diskSize := setDiskVars()
 	helpers.JsonUpdater(CONFIG_FILE, "mountOptions", "defaults", false)
 	helpers.JsonUpdater(CONFIG_FILE, "disk", disk, false)
+	helpers.JsonUpdater(CONFIG_FILE, "diskSize", fmt.Sprint(diskSize), false)
 
 	userName, hostName := userInfo()
 	helpers.JsonUpdater(CONFIG_FILE, "userName", userName, false)
 	helpers.JsonUpdater(CONFIG_FILE, "hostName", hostName, false)
+
+	passwd := setPassword()
+	helpers.JsonUpdater(CONFIG_FILE, "userPassword", passwd, false)
+
+	rPasswd := rootPasswd()
+	helpers.JsonUpdater(CONFIG_FILE, "rootPassword", rPasswd, false)
 
 	aurH := aurHelper()
 	helpers.JsonUpdater(CONFIG_FILE, "aurHelper", aurH, false)
