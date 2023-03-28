@@ -1,41 +1,50 @@
 package main
 
-/* Notes
-Create a common config file (JSON) to store common variables for the script files.
+/*******************************************************************************
+Notes:
+Create a common config file to store common variables for the script files.
 Compile the files separated and uses a shell script to launch then accordingly.
 
+Planned Features:
+Use the i18n and i10n pkgs to implement internationalization.
+Implements a verbose/explanatory script log like the NIX installer.
+
+THINGS THAT I *NEED* TO DO:
+Implement check/search criteria in packages to prevent the user to install
+packages that are not available in the Arch Linux main repos.
+
 Split the installation in multiple sections:
-	[ ] - Startup
-	[ ] - Pre-Setup
-	[ ] - Setup
+	[x] - Startup
+	[x] - Pre-Install
+	[ ] - Base-Install
 	[ ] - User Configuration
-	[ ] - Post Install
+	[ ] - Post-Install
 	[ ] - Rice System
 Startup Steps:
-	[ ] - Create Config File
-	[ ] - Get User Password
-	[ ] - Get TimeZone
-	[ ] - Get Keyboard Layout
-	[ ] - Get Disk Device
-	[ ] - Get Disk Size
-	[ ] - Set Mount Options
-	[ ] - Get User Name
-	[ ] - Get Host Name
-	[ ] - Get AUR Helper or NIX Package Manager
-Pre-Setup Steps:
-	[ ] - Get Country ISO
-	[ ] - Synchronize Hardware Clock
-	[ ] - Set Pacman
-	[ ] - Download Essential Packages
-	[ ] - Format Disk
-	[ ] - Get BOOT System
-	[ ] - Get SWAP Partition
-	[ ] - Partition Disk
-	[ ] - Mount Partitions
-	[ ] - Install Base System
-	[ ] - Generate File System Table (FSTAB)
-	[ ] - Install GRUB
-Setup Steps:
+	[x] - Create Config File
+	[x] - Get User Password
+	[x] - Get TimeZone
+	[x] - Get Keyboard Layout
+	[x] - Get Disk Device
+	[x] - Get Disk Size
+	[x] - Set Mount Options
+	[x] - Get User Name
+	[x] - Get Host Name
+	[x] - Get AUR Helper or NIX Package Manager
+Pre-Install Steps:
+	[x] - Get Country ISO
+	[x] - Synchronize Hardware Clock
+	[x] - Set Pacman
+	[x] - Download Essential Packages
+	[x] - Format Disk
+	[x] - Get BOOT System
+	[x] - Get SWAP Partition
+	[x] - Partition Disk
+	[x] - Mount Partitions
+	[x] - Install Base System
+	[x] - Generate File System Table (FSTAB)
+	[x] - Install GRUB
+Base-Install Steps:
 	[ ] - Set Network
 	[ ] - Config Pacman (again)
 	[ ] - Set MAKEPKG Config
@@ -54,7 +63,7 @@ User Configuration Steps:
 	[ ] - Sets SHELL
 	[ ] - Installs AUR/NIX
 	[ ] - Install Packages
-Post Install Steps:
+Post-Install Steps:
 	[ ] - Customizes GRUB
 	[ ] - Installs Display Manager
 	[ ] - Customizes Display Manager
@@ -67,7 +76,7 @@ Rice System Steps:
 	[ ] -
 	[ ] -
 	[ ] -
-*/
+*******************************************************************************/
 
 // IMPORTS
 import (
@@ -106,8 +115,8 @@ func main() {
 
 	if helpers.YesNo("Can we proceed to the installation?") {
 		//sections.Startupp()
-		sections.PreInstalll()
-		//sections.BaseInstall()
+		//sections.PreInstalll()
+		sections.BaseInstall()
 		//sections.UserConfig()
 		//sections.PostInstall()
 	}

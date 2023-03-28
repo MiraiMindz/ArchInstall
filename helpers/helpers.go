@@ -17,13 +17,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/manifoldco/promptui"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 )
 
 // Automates the process of running shell commands
-func RunShellCommand( testMode bool, name string, args ...string) string {
+func RunShellCommand(testMode, returnOutput bool, name string, args ...string) string {
 	if testMode {
 		x := []string{name}
 		x = append(x, args...)
@@ -32,32 +33,17 @@ func RunShellCommand( testMode bool, name string, args ...string) string {
 	} else {
 		cmd := exec.Command(name, args...)
 		cmd.Stdin = os.Stdin
-		out, err := cmd.Output()
-		Check(err)
-		return string(out)
+		if returnOutput {
+			out, err := cmd.Output()
+			Check(err)
+			return string(out)
+		} else {
+			cmd.Stdout = os.Stdout
+			cmd.Run()
+			return ""
+		}
 	}
 }
-
-// Function that prints a [DEBUG] statement
-// func DebugPrint(variable interface{}) {
-// 	fmt.Printf("[DEBUG] %s\t=\t%s\n", variable, variable)
-// }
-
-// Used to show the current step in the installation
-// func StepPrint(step string, stpCnt int8) {
-// 	magenta := color.New(color.FgMagenta).SprintFunc()
-// 	stpStr := ""
-// 	if stpCnt < 10 {
-// 		stpStr = fmt.Sprintf("0%v", stpCnt)
-// 	} else {
-// 		stpStr = fmt.Sprint(stpCnt)
-// 	}
-// 	base_step_string := "[" + stpStr + "]"
-// 	colored_step_string := magenta(base_step_string)
-
-// 	final_string := colored_step_string + " " + step
-// 	fmt.Println(final_string)
-// }
 
 // Returns a string with the text centralized.
 func CenterSprint(text, ghostText string) string {
@@ -79,7 +65,7 @@ func CenterSprint(text, ghostText string) string {
 
 // Uses the 'stty' UNIX command to get terminal size
 func GetTerminalSize() (int, int) {
-	s := RunShellCommand(false, "stty", "size")
+	s := RunShellCommand(false, true, "stty", "size")
 	s = strings.TrimSpace(s)
 	sArr := strings.Split(s, " ")
 
@@ -121,7 +107,7 @@ func CheckFileExists(filePath string) bool {
 func PromptReadPassword(prompt string) string {
 	inputPrompt := promptui.Prompt{
 		Label: prompt,
-		Mask: '*',
+		Mask:  '*',
 	}
 	result, err := inputPrompt.Run()
 
@@ -129,13 +115,36 @@ func PromptReadPassword(prompt string) string {
 	return result
 }
 
-// Find and replace a line in a file.
-func ReplaceFileLine(file, line, replace string) interface{} {
-	var lineFound = true
+func ReadFileToStrSlice(file, split string) []string {
 	readFile, err := os.ReadFile(file)
 	Check(err)
 
-	lines := strings.Split(string(readFile), "\n")
+	lines := strings.Split(string(readFile), split)
+	return lines
+}
+
+func ReadLocaleFile(file, split string) []string {
+	var lines []string
+	readFile, err := os.ReadFile(file)
+	Check(err)
+
+	rawLines := strings.Split(string(readFile), split)
+	for i, v := range rawLines {
+		if i > 22 {
+			strippedLines := strings.Trim(v, "#")
+			if strings.Contains(strings.ToLower(strippedLines), "utf") || strings.Contains(strings.ToLower(strippedLines), "iso") {
+				lines = append(lines, strippedLines)
+			}
+		}
+	}
+	return lines
+}
+
+// Find and replace a line in a file.
+func ReplaceFileLine(file, line, replace string) interface{} {
+	var lineFound = true
+
+	lines := ReadFileToStrSlice(file, "\n")
 	for i, currLine := range lines {
 		if strings.Contains(currLine, line) {
 			lines[i] = replace
@@ -144,7 +153,7 @@ func ReplaceFileLine(file, line, replace string) interface{} {
 		}
 	}
 	output := strings.Join(lines, "\n")
-	err = os.WriteFile(file, []byte(output), 0644)
+	err := os.WriteFile(file, []byte(output), 0644)
 	Check(err)
 	if !lineFound {
 		return lineFound
@@ -166,12 +175,12 @@ func GetLine(file, key string) interface{} {
 }
 
 // Append data to a JSON file.
-func JsonAppender(file string, attribute string, value interface{}) {
+func JsonAppender(file, attribute string, value interface{}) {
 	var data []map[string]interface{}
 	content, err := os.ReadFile(file)
 	Check(err)
 	json.Unmarshal(content, &data)
-	new_data := &map[string]interface{} {
+	new_data := &map[string]interface{}{
 		attribute: value,
 	}
 	data = append(data, *new_data)
@@ -183,7 +192,7 @@ func JsonAppender(file string, attribute string, value interface{}) {
 }
 
 // Updates data in a JSON file.
-func JsonUpdater(file string, attribute string, value interface{}, returnValue bool) interface{} {
+func JsonUpdater(file, attribute string, value interface{}, returnValue bool) interface{} {
 	file_stats, err := os.Stat(file)
 	Check(err)
 
@@ -236,7 +245,7 @@ func CurlResponse(URL string) string {
 }
 
 // Find any files recursively and tries with 2 distinct extensions.
-func FindFiles(root, fileExtension string, secondExtension string, onlyFileName bool) []string {
+func FindFiles(root, fileExtension, secondExtension string, onlyFileName bool) []string {
 	var _tempList []string
 	filepath.WalkDir(root, func(path string, data fs.DirEntry, err error) error {
 		Check(err)
@@ -266,20 +275,39 @@ func ByteSizeConverter(b uint64) string {
 
 // Checks ifs a string is a numeric value.
 func IsNumeric(s string) bool {
-    _, err := strconv.ParseFloat(s, 64)
-    return err == nil
+	_, err := strconv.ParseFloat(s, 64)
+	return err == nil
 }
 
 // Prompts for a yes/no decision.
 func YesNo(promptString string) bool {
-    prompt := promptui.Select{
-        Label: fmt.Sprintf("%s [%s/%s]", promptString, PrintGreen("Yes"),  PrintRed("No")),
-        Items: []string{PrintGreen("Yes"), PrintRed("No")},
-		HideHelp: true,
-    }
-    _, result, err := prompt.Run()
-    Check(err)
-    return result == PrintGreen("Yes")
+	promptui.IconSelect = promptui.Styler(promptui.FGBlack)(">")
+	promptui.IconWarn = promptui.Styler(promptui.FGYellow)("!")
+	promptui.IconBad = promptui.Styler(promptui.FGRed)("X")
+	promptui.IconGood = promptui.Styler(promptui.FGGreen)("O")
+	promptui.KeyNextDisplay = "v"
+	promptui.KeyPrevDisplay = "^"
+	promptui.KeyBackwardDisplay = "<"
+	promptui.KeyForwardDisplay = ">"
+
+	helpStr := promptui.Styler(promptui.FGBlack)("Use the <up-arrow> and <down-arrow> to navigate and <ENTER> to confirm.")
+
+	templates := &promptui.SelectTemplates{
+		Help:     helpStr, // Use the arrow keys to navigate: ↓ ↑ → ←
+		Active:   fmt.Sprintf("%s {{ . }}", promptui.IconSelect),
+		Inactive: "  {{ . }}",
+		Selected: fmt.Sprintf("%s {{ . }}", promptui.IconSelect),
+	}
+
+	prompt := promptui.Select{
+		Label: fmt.Sprintf("%s [%s/%s]", promptString, PrintGreen("Yes"), PrintRed("No")),
+		Items: []string{PrintGreen("Yes"), PrintRed("No")},
+		//HideHelp: true,
+		Templates: templates,
+	}
+	_, result, err := prompt.Run()
+	Check(err)
+	return result == PrintGreen("Yes")
 }
 
 // Clears the console in UNIX like systems.
@@ -289,15 +317,60 @@ func ClearConsole() {
 
 // Prompts for a menu selection.
 func PromptSelect(promptString string, itemsList []string) (int, string) {
+	promptui.IconSelect = promptui.Styler(promptui.FGBlack)(">")
+	promptui.IconWarn = promptui.Styler(promptui.FGYellow)("!")
+	promptui.IconBad = promptui.Styler(promptui.FGRed)("X")
+	promptui.IconGood = promptui.Styler(promptui.FGGreen)("O")
+	promptui.KeyNextDisplay = "v"
+	promptui.KeyPrevDisplay = "^"
+	promptui.KeyBackwardDisplay = "<"
+	promptui.KeyForwardDisplay = ">"
+	helpStr := promptui.Styler(promptui.FGBlack)("Use the <up-arrow> and <down-arrow> to navigate and <ENTER> to confirm.")
+
+	templates := &promptui.SelectTemplates{
+		Help: helpStr, // Use the arrow keys to navigate: ↓ ↑ → ←
+	}
 	prompt := promptui.Select{
 		Label: promptString,
 		Items: itemsList,
-		HideHelp: true,
+		//HideHelp: true,
+		Templates: templates,
 	}
 	numRes, strRes, err := prompt.Run()
 	Check(err)
 
 	return numRes, strRes
+}
+
+// Prompts for a menu selection and provides a info.
+func PromptSelectInfo(promptString string, itemsList []ItemInfo) (int, string) {
+	promptui.IconSelect = promptui.Styler(promptui.FGBlack)(">")
+	promptui.IconWarn = promptui.Styler(promptui.FGYellow)("!")
+	promptui.IconBad = promptui.Styler(promptui.FGRed)("X")
+	promptui.IconGood = promptui.Styler(promptui.FGGreen)("O")
+	promptui.KeyNextDisplay = "v"
+	promptui.KeyPrevDisplay = "^"
+	promptui.KeyBackwardDisplay = "<"
+	promptui.KeyForwardDisplay = ">"
+	helpStr := promptui.Styler(promptui.FGBlack)("Use the <up-arrow> and <down-arrow> to navigate and <ENTER> to confirm.")
+
+	templates := &promptui.SelectTemplates{
+		Help:     helpStr, // Use the arrow keys to navigate: ↓ ↑ → ←
+		Details:  promptui.Styler(promptui.FGBlack)("{{ .Info }}"),
+		Active:   fmt.Sprintf("%s {{ .Item }}", promptui.IconSelect),
+		Inactive: "  {{ .Item | black }}",
+		Selected: fmt.Sprintf("%s {{ .Item }}", promptui.IconSelect),
+	}
+
+	prompt := promptui.Select{
+		Label:     promptString,
+		Items:     itemsList,
+		Templates: templates,
+	}
+	numRes, _, err := prompt.Run()
+	Check(err)
+
+	return numRes, itemsList[numRes].Item
 }
 
 // Prompts for a text input.
@@ -314,7 +387,7 @@ func InputPrompt(inputPrompt string) string {
 
 func InputDefaultPrompt(inputPrompt, defaultValue string) string {
 	prompt := promptui.Prompt{
-		Label: inputPrompt,
+		Label:   inputPrompt,
 		Default: defaultValue,
 	}
 
@@ -369,7 +442,6 @@ func CopyFile(sourceFile, destination string) {
 	Check(err)
 	fmt.Printf("Copied %s from %s to %s\n", ByteSizeConverter(uint64(nBytes)), sourceFile, destination)
 }
-
 
 func ExtractNumbers(text string) []int {
 	re := regexp.MustCompile("[0-9]+")
@@ -431,7 +503,6 @@ func RoundMultiple(number, multiple float64) float64 {
 	return multiple * math.Round(number/multiple)
 }
 
-
 func IsValidHostname(hostname string) bool {
 	if net.ParseIP(hostname) != nil {
 		return false
@@ -465,7 +536,6 @@ func IsValidHostname(hostname string) bool {
 
 	return true
 }
-
 
 func IsValidLinuxUsername(username string) bool {
 	if net.ParseIP(username) != nil {
@@ -513,4 +583,98 @@ func WriteToFile(filePath, content string, permissions fs.FileMode) {
 	err := os.WriteFile(filePath, []byte(content), permissions)
 	Check(err)
 	fmt.Printf("Written %d bytes to %s\n", len(content), filePath)
+}
+
+func PacmanInstallPackages(pkgs ...string) {
+	_PacManCommands := []string{"-S", "--noconfirm", "--needed"}
+	pkgs = append(pkgs, _PacManCommands...)
+	RunShellCommand(COMMANDS_TEST_MODE, false, "pacman", pkgs...)
+}
+
+func GetOccurrences(file, key string) int {
+	readFile, err := os.ReadFile(file)
+	var occurrences int
+	Check(err)
+	lines := strings.Split(string(readFile), "\n")
+	for _, currLine := range lines {
+		if strings.Contains(currLine, key) {
+			occurrences++
+		}
+	}
+	return occurrences
+}
+
+func GrepCommandOut(cmdOut, key string) interface{} {
+	lines := strings.Split(cmdOut, "\n")
+	for _, currLine := range lines {
+		if strings.Contains(currLine, key) {
+			return currLine
+		}
+	}
+	return nil
+}
+
+func BulkPrint(strs []string) {
+	for _, v := range strs {
+		fmt.Println(v)
+	}
+}
+
+func AurNixInstall(installer string, pkgs []string) {
+	if strings.ToLower(installer) == "nix" {
+
+	}
+}
+
+func PromptMultiSelect(promptText string, opts []string) []string {
+	selections := []string{}
+	prompt := &survey.MultiSelect{
+		Message: promptText,
+		Options: opts,
+	}
+	survey.AskOne(prompt, &selections)
+	return selections
+}
+
+func CheckExistsInStringSlice(key string, slice []string) bool {
+	for _, v := range slice {
+		if strings.ToLower(key) == strings.ToLower(v) {
+			return true
+		}
+	}
+	return false
+}
+
+func InstallAurPkgWithoutHelper(pkgName string) {
+	RunShellCommand(COMMANDS_TEST_MODE, false, "git", "clone", fmt.Sprintf("https://aur.archlinux.org/%s.git", pkgName))
+	err := os.Chdir(fmt.Sprintf("./%s", pkgName))
+	Check(err)
+	RunShellCommand(COMMANDS_TEST_MODE, false, "makepkg", "-si", "--noconfirm")
+}
+
+// difference returns the elements in `a` that aren't in `b`.
+func DifferenceBetweenSlices(a, b []string) []string {
+	mb := make(map[string]struct{}, len(b))
+	for _, x := range b {
+		mb[x] = struct{}{}
+	}
+	var diff []string
+	for _, x := range a {
+		if _, found := mb[x]; !found {
+			diff = append(diff, x)
+		}
+	}
+	return diff
+}
+
+func EmptyFile(filePath string) {
+	err := os.Truncate(filePath, 0)
+	Check(err)
+}
+
+func AppendToFile(filePath, textToAppend string) {
+	f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	Check(err)
+	defer f.Close()
+	_, err = f.WriteString(fmt.Sprintf("%s\n", textToAppend))
 }

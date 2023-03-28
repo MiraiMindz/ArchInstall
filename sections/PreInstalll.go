@@ -92,20 +92,18 @@ func setCountryISO() string {
 func setTimeDate() {
 	helpers.ClearConsole()
 	helpers.PrintHeader("Pre-Install", "Synchronizing hardware clock")
-	cmd := helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "timedatectl", "set-ntp", "true")
-	fmt.Println(cmd)
-	helpers.YesNo("")
+	helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "timedatectl", "set-ntp", "true")
 }
 
-func setupPacman(reflectorCountryISO string) {
+func setupPacman(reflectorCountryISO, cfgFile string) {
 	helpers.ClearConsole()
 	helpers.PrintHeader("Pre-Install", "Setting up PacMan")
-	cmd := helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "pacman", "-S", "--noconfirm", "archlinux-keyring")
-	fmt.Print(cmd)
-	cmd = helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "pacman", "-S", "--noconfirm", "--needed", "pacman-contrib")
-	fmt.Println(cmd)
+	helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "pacman", "-S", "--noconfirm", "archlinux-keyring")
+	helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "pacman", "-S", "--noconfirm", "--needed", "pacman-contrib")
 
 	// parallelDowns := helpers.InputDefaultPrompt("Enter your desired number of Parallel Downloads", "5")
+
+	//helpers.JsonUpdater(cfgFile, "pacmanParallelDownloads", parallelDowns)
 
 	// helpers.ReplaceFileLine("/etc/pacman.conf", "#ParallelDownloads", fmt.Sprintf("ParallelDownloads = %s", parallelDowns))
 	// helpers.ReplaceFileLine("/etc/pacman.conf", "#Color", "Color")
@@ -117,17 +115,12 @@ func setupPacman(reflectorCountryISO string) {
 	// // helpers.ReplaceFileLine("/media/Arquivos/Programming/Projects/ArchInstall/pacman.conf", "#CheckSpace", "CheckSpace")
 	// // helpers.ReplaceFileLine("/media/Arquivos/Programming/Projects/ArchInstall/pacman.conf", "#VerbosePkgLists", "VerbosePkgLists")
 
-
-	cmd = helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "pacman", "-S", "--noconfirm", "--needed", "reflector", "grub")
-	fmt.Println(cmd)
+	helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "pacman", "-S", "--noconfirm", "--needed", "reflector", "grub")
 
 	//helpers.CopyFile("/etc/pacman.d/mirrorlist", "/etc/pacman.d/mirrorlist.backup")
 	reflectorArgs := []string{"-a", "48", "-c", reflectorCountryISO, "-f", "5", "-l", "20", "--sort", "rate", "--save", "/etc/pacman.d/mirrorlist"}
-	cmd = helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "reflector", reflectorArgs...)
-	fmt.Println(cmd)
-
-	cmd = helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "pacman", "-S", "--noconfirm", "--needed", "gptfdisk")
-	fmt.Println(cmd)
+	helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "reflector", reflectorArgs...)
+	helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "pacman", "-S", "--noconfirm", "--needed", "gptfdisk")
 
 	helpers.YesNo("")
 }
@@ -137,10 +130,10 @@ func formatDisk(cfgFile string) {
 	helpers.PrintHeader("Pre-Install", "Formatting Disk")
 
 	disk := helpers.JsonGetter(cfgFile, "disk")
-	helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "mkdir", "-pv", "/mnt")
-	helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "umount", "-A", "--recursive", "/mnt")
-	helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "sgdisk", "-Z", disk)
-	helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "sgdisk", "-a", "2048", "-o", disk)
+	helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "mkdir", "-pv", "/mnt")
+	helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "umount", "-A", "--recursive", "/mnt")
+	helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "sgdisk", "-Z", disk)
+	helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "sgdisk", "-a", "2048", "-o", disk)
 	helpers.YesNo("")
 }
 
@@ -163,8 +156,6 @@ func bootSystem() string {
 		return selectedBootSystem
 	}
 }
-
-
 
 //region disk
 //// I think it's cleaner now
@@ -249,31 +240,29 @@ func _askPartitionName(prompt string) string {
 	return partName
 }
 
-
 func _createPartitions(partitionName, sgString, partitionCode, disk string) {
 	tCode := fmt.Sprintf("--typecode=0:%s", partitionCode)
 	pName := fmt.Sprintf("--change-name=0:'%s'", partitionName)
-	helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "sgdisk", "-n", sgString, tCode, pName, disk)
-	//fmt.Println(cmd)
+	helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "sgdisk", "-n", sgString, tCode, pName, disk)
 }
 
 func _createFileSystems(partitionName, partDisk, filesystem string) {
 	switch strings.ToLower(filesystem) {
 	case "btrfs":
-		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "mkfs.btrfs", "-L", partitionName, "-f")
+		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "mkfs.btrfs", "-L", partitionName, "-f")
 		break
 	case "ext4":
-		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "mkfs.ext4", "-L", partitionName)
+		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "mkfs.ext4", "-L", partitionName)
 		break
 	case "swp":
-		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "mkswap", partDisk)
-		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "swapon", partDisk)
+		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "mkswap", partDisk)
+		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "swapon", partDisk)
 		break
 	case "fat":
-		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "mkfs.fat", "-F32", "-n", partitionName, partDisk)
+		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "mkfs.fat", "-F32", "-n", partitionName, partDisk)
 		break
 	case "vfat":
-		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "mkfs.vfat", "-F32", "-n", partitionName, partDisk)
+		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "mkfs.vfat", "-F32", "-n", partitionName, partDisk)
 		break
 	}
 }
@@ -283,45 +272,52 @@ func _setRootPart(isHomeSet, isFileSet, isCustomSet, isX64 bool, percentSize, re
 	var sgString, selectedFS, partitionCode string
 	partitionName := "ROOT"
 
+	helpers.ClearConsole()
+	helpers.PrintHeader("Pre-Install", "Partitioning")
 	if isHomeSet && (isFileSet || isCustomSet) {
 		rootSize, _ = _calcRootHomeSize(percentSize)
 		rootSizeBytes := helpers.ByteSizeConverter(uint64(rootSize))
 		helpers.ClearConsole()
-		fmt.Println(isHomeSet)
+		helpers.PrintHeader("Pre-Install", "Partitioning")
 		promptString := fmt.Sprintf("Based on you drive size, the scripts recommends a size of %s to %s, would you like to use it?", rootSizeBytes, partitionName)
 		if helpers.YesNo(promptString) {
 			sgString = fmt.Sprintf("0:0:+%s", helpers.ParseSizeString(rootSizeBytes))
 			returnSize = restSize - rootSize
 		} else {
 			helpers.ClearConsole()
+			helpers.PrintHeader("Pre-Install", "Partitioning")
 			_showRemainingDisk(restSize)
 			returnSize, sgString = _askSizeOfDisk(restSize, diskFullSize, partitionName)
 		}
 	} else if isHomeSet && !isFileSet && !isCustomSet {
 		rootSizeBytes := helpers.ByteSizeConverter(uint64(percentSize * helpers.GiB))
 		helpers.ClearConsole()
+		helpers.PrintHeader("Pre-Install", "Partitioning")
 		promptString := fmt.Sprintf("Based on you drive size, the scripts recommends a size of %s to %s, would you like to use it?", rootSizeBytes, partitionName)
 		if helpers.YesNo(promptString) {
 			sgString = fmt.Sprintf("0:0:+%s", helpers.ParseSizeString(rootSizeBytes))
 			returnSize = restSize - (percentSize * helpers.GiB)
 		} else {
 			helpers.ClearConsole()
+			helpers.PrintHeader("Pre-Install", "Partitioning")
 			_showRemainingDisk(restSize)
 			returnSize, sgString = _askSizeOfDisk(restSize, diskFullSize, partitionName)
 		}
 	} else if !isHomeSet && (isFileSet || isCustomSet) {
 		rootSizeBytes := helpers.ByteSizeConverter(uint64(percentSize * helpers.GiB))
 		helpers.ClearConsole()
+		helpers.PrintHeader("Pre-Install", "Partitioning")
 		promptString := fmt.Sprintf("Based on you drive size, the scripts recommends a size of %s to %s, would you like to use it?", rootSizeBytes, partitionName)
 		if helpers.YesNo(promptString) {
 			sgString = fmt.Sprintf("0:0:+%s", helpers.ParseSizeString(rootSizeBytes))
 			returnSize = restSize - (percentSize * helpers.GiB)
 		} else {
 			helpers.ClearConsole()
+			helpers.PrintHeader("Pre-Install", "Partitioning")
 			_showRemainingDisk(restSize)
 			returnSize, sgString = _askSizeOfDisk(restSize, diskFullSize, partitionName)
 		}
-	}  else {
+	} else {
 		returnSize = restSize
 		sgString = "0:0:0"
 	}
@@ -342,6 +338,9 @@ func _setHomePart(isFileSet, isCustomSet bool, percentSize, restSize, diskFullSi
 	partitionName := "HOME"
 	mountPoint := "home"
 
+	helpers.ClearConsole()
+	helpers.PrintHeader("Pre-Install", "Partitioning")
+
 	if !isFileSet && !isCustomSet {
 		returnSize = restSize
 		sgString = "0:0:0"
@@ -349,12 +348,14 @@ func _setHomePart(isFileSet, isCustomSet bool, percentSize, restSize, diskFullSi
 		_, homeSize = _calcRootHomeSize(percentSize)
 		bytesHomeSize := helpers.ByteSizeConverter(uint64(homeSize))
 		helpers.ClearConsole()
+		helpers.PrintHeader("Pre-Install", "Partitioning")
 		promptString := fmt.Sprintf("Based on you drive size, the scripts recommends a size of %s to %s, would you like to use it?", bytesHomeSize, partitionName)
 		if helpers.YesNo(promptString) {
 			sgString = fmt.Sprintf("0:0:+%s", helpers.ParseSizeString(bytesHomeSize))
 			returnSize = restSize - (percentSize * helpers.GiB)
 		} else {
 			helpers.ClearConsole()
+			helpers.PrintHeader("Pre-Install", "Partitioning")
 			_showRemainingDisk(restSize)
 			returnSize, sgString = _askSizeOfDisk(restSize, diskFullSize, partitionName)
 		}
@@ -367,6 +368,8 @@ func _setHomePart(isFileSet, isCustomSet bool, percentSize, restSize, diskFullSi
 func _setFilePart(restSize int) (int, string, string, string, string, string) {
 	partitionName := "FILES"
 	mountPoint := "media/Files"
+	helpers.ClearConsole()
+	helpers.PrintHeader("Pre-Install", "Partitioning")
 	selectedFS := _askPartitionFileSystem(partitionName)
 	return restSize, partitionName, "0:0:0", selectedFS, "8300", mountPoint
 }
@@ -385,7 +388,6 @@ func _partHint(isFileSet bool) {
 	}
 }
 
-
 func _setMorePart(isFileSet bool, restSize, diskFullSize int) [][]string {
 	var partCommands [][]string
 	var returnSize int = restSize
@@ -393,6 +395,7 @@ func _setMorePart(isFileSet bool, restSize, diskFullSize int) [][]string {
 	var baseMountPoint string = "media"
 
 	helpers.ClearConsole()
+	helpers.PrintHeader("Pre-Install", "Partitioning")
 	_partHint(isFileSet)
 	answer, err := strconv.Atoi(helpers.InputPrompt("How many partitions do you want to create?"))
 	helpers.Check(err)
@@ -401,10 +404,12 @@ func _setMorePart(isFileSet bool, restSize, diskFullSize int) [][]string {
 		for i := 0; i < answer; i++ {
 			x := i
 			helpers.ClearConsole()
+			helpers.PrintHeader("Pre-Install", "Partitioning")
 			_partHint(isFileSet)
 			_showRemainingDisk(returnSize)
-			partName := _askPartitionName(fmt.Sprintf("What is the name of the partition %d?", (x+1)))
+			partName := _askPartitionName(fmt.Sprintf("What is the name of the partition %d?", (x + 1)))
 			helpers.ClearConsole()
+			helpers.PrintHeader("Pre-Install", "Partitioning")
 
 			_partHint(isFileSet)
 			_showRemainingDisk(returnSize)
@@ -423,19 +428,21 @@ func _setMorePart(isFileSet bool, restSize, diskFullSize int) [][]string {
 			partCommands = append(partCommands, partInfos)
 		}
 	} else {
-		for i := 0; i < (answer-1); i++ {
+		for i := 0; i < (answer - 1); i++ {
 			x := i
 			helpers.ClearConsole()
+			helpers.PrintHeader("Pre-Install", "Partitioning")
 			_partHint(isFileSet)
 			_showRemainingDisk(restSize)
 
-
 			helpers.ClearConsole()
+			helpers.PrintHeader("Pre-Install", "Partitioning")
 			_partHint(isFileSet)
 			_showRemainingDisk(returnSize)
-			partName := _askPartitionName(fmt.Sprintf("What is the name of the partition %d?", (x+1)))
+			partName := _askPartitionName(fmt.Sprintf("What is the name of the partition %d?", (x + 1)))
 
 			helpers.ClearConsole()
+			helpers.PrintHeader("Pre-Install", "Partitioning")
 			_partHint(isFileSet)
 			_showRemainingDisk(returnSize)
 			returnSize, sgString = _askSizeOfDisk(returnSize, diskFullSize, partName)
@@ -453,6 +460,7 @@ func _setMorePart(isFileSet bool, restSize, diskFullSize int) [][]string {
 			partCommands = append(partCommands, partInfos)
 		}
 		helpers.ClearConsole()
+		helpers.PrintHeader("Pre-Install", "Partitioning")
 		_partHint(isFileSet)
 		_showRemainingDisk(returnSize)
 
@@ -476,7 +484,7 @@ func _setMorePart(isFileSet bool, restSize, diskFullSize int) [][]string {
 
 func setDiskPartVars(cfgFile, disk string, isSWAPSet bool, swapSize int) [][]string {
 	helpers.ClearConsole()
-	helpers.PrintHeader("Startup", "Partitioning")
+	helpers.PrintHeader("Pre-Install", "Partitioning")
 	var (
 		homePart, filePart, morePart, isX64 bool = false, false, false, false
 		rootLabel, homeLabel, filesLabel,
@@ -484,27 +492,34 @@ func setDiskPartVars(cfgFile, disk string, isSWAPSet bool, swapSize int) [][]str
 		rootFS, homeFS, filesFS,
 		rootPartCode, homePartCode, filesPartCode,
 		homeMountPoint, filesMountPoint string
-		dSizePercent, restSize int
+		dSizePercent, restSize   int
 		commandsOrder, partLists [][]string
 	)
-
 
 	dSize, err := strconv.Atoi(helpers.JsonGetter(cfgFile, "diskSize"))
 	helpers.Check(err)
 
+	helpers.ClearConsole()
+	helpers.PrintHeader("Pre-Install", "Partitioning")
 	if helpers.YesNo("Would you like to create a partition for the /home folder?") {
 		homePart = true
 	}
 
+	helpers.ClearConsole()
+	helpers.PrintHeader("Pre-Install", "Partitioning")
 	fmt.Println(helpers.PrintHiBlack("Note: this partition will be the final one, taking the rest of the disk available space."))
 	if helpers.YesNo("Would you like to create a partition for files under /media?") {
 		filePart = true
 	}
 
+	helpers.ClearConsole()
+	helpers.PrintHeader("Pre-Install", "Partitioning")
 	if helpers.YesNo("Would you like to create more partitions?") {
 		morePart = true
 	}
 
+	helpers.ClearConsole()
+	helpers.PrintHeader("Pre-Install", "Partitioning")
 	if helpers.YesNo("Are you running an 64-bit system?") {
 		isX64 = true
 	}
@@ -601,12 +616,10 @@ func setDiskPartVars(cfgFile, disk string, isSWAPSet bool, swapSize int) [][]str
 		commandsOrder = append(commandsOrder, filePartData)
 	}
 
-
 	fmt.Println(commandsOrder)
 
 	return commandsOrder
 }
-
 
 func partitionDisk(cfgFile string) {
 	var commandsOrder [][]string
@@ -620,7 +633,6 @@ func partitionDisk(cfgFile string) {
 		commandsOrder = append(commandsOrder, []string{"EFIBOOT", "0:0:+300M", "vfat", "ef00"})
 	}
 
-
 	memInfo := helpers.GetLine("/proc/meminfo", "MemTotal")
 	totalMem := helpers.ExtractNumbers(memInfo.(string))[0] * helpers.KiB
 
@@ -628,9 +640,11 @@ func partitionDisk(cfgFile string) {
 		rSize, swapSize := _getRecommendedSwapSize(totalMem)
 		if rSize > 0 {
 			swpSize = rSize * helpers.GiB
+			helpers.ClearConsole()
+			helpers.PrintHeader("Pre-Install", "Partitioning")
 			fmt.Println("The script detected that you have less than 8GiB of RAM")
 			fmt.Printf("Based on your RAM size of %s, the script recommends a SWAP size of %s\n",
-			helpers.ByteSizeConverter(uint64(totalMem)), helpers.ByteSizeConverter(uint64(rSize * helpers.GiB)))
+				helpers.ByteSizeConverter(uint64(totalMem)), helpers.ByteSizeConverter(uint64(rSize*helpers.GiB)))
 			if helpers.YesNo("Would you like to create a SWAP partition?") {
 				commandsOrder = append(commandsOrder, []string{"SWAP", swapSize, "swp", "8200"})
 				isSWAPSet = true
@@ -646,11 +660,7 @@ func partitionDisk(cfgFile string) {
 		commandsOrder = append(commandsOrder, cOrd...)
 	}
 
-
-
-
-	helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "partprobe", disk)
-
+	helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "partprobe", disk)
 
 	fmt.Println(commandsOrder)
 	helpers.YesNo("")
@@ -665,17 +675,17 @@ func partitionDisk(cfgFile string) {
 		for i, v := range commandsOrder {
 			x := i
 			if len(v) > 0 {
-				_createFileSystems(v[0], fmt.Sprintf("%s%d",disk,x+1), v[2])
+				_createFileSystems(v[0], fmt.Sprintf("%s%d", disk, x+1), v[2])
 			}
 		}
 
 		for _, v := range commandsOrder {
 			if len(v) > 0 {
 				if (v[0] != "ROOT") && (v[0] != "BIOSBOOT") && (v[0] != "EFIBOOT") {
-					helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "mkdir", "-pv", fmt.Sprintf("/mnt/%s", v[4]))
+					helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "mkdir", "-pv", fmt.Sprintf("/mnt/%s", v[4]))
 				}
 				if v[0] == "EFIBOOT" {
-					helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "mkdir", "-pv", "/mnt/boot/efi")
+					helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "mkdir", "-pv", "/mnt/boot/efi")
 				}
 			}
 		}
@@ -685,19 +695,20 @@ func partitionDisk(cfgFile string) {
 		//x := i
 		if len(v) > 0 {
 			if (v[0] != "ROOT") && (v[0] != "BIOSBOOT") && (v[0] != "EFIBOOT") { // fmt.Sprintf("/mnt/%s", v[4])
-				helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "mount", "-v", "-L", v[0], fmt.Sprintf("/mnt/%s", v[4]))
+				helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "mount", "-v", "-L", v[0], fmt.Sprintf("/mnt/%s", v[4]))
 			}
 			if v[0] == "EFIBOOT" {
-				helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "mount", "-v", "-t", v[2], "-L", "EFIBOOT", "/mnt/boot/")
+				helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "mount", "-v", "-t", v[2], "-L", "EFIBOOT", "/mnt/boot/")
 			}
 		}
 	}
 
-
 	if helpers.GetLine("/proc/mounts", "/mnt") == nil {
+		helpers.ClearConsole()
+		helpers.PrintHeader("Pre-Install", "Partitioning")
 		fmt.Println(helpers.PrintError("Driver is not mounted, can't continue"))
-		helpers.CountDown(5, "Rebooting")
-		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "reboot", "now")
+		helpers.CountDown(10, "Rebooting")
+		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "reboot", "now")
 	}
 
 }
@@ -705,65 +716,110 @@ func partitionDisk(cfgFile string) {
 //endregion
 
 func installArch() {
-	note := fmt.Sprintf("%s%s%s",
-		helpers.PrintHiBlack("Enter \""),
-		helpers.PrintYellow("DEFAULT"),
-		helpers.PrintHiBlack("\" to see and select the default installation packages."),
-	)
+	kernelsOpts := []helpers.ItemInfo{
+		{Item: "stable", Info: "Vanilla Linux kernel and modules, with a few patches applied."},
+		{Item: "hardened", Info: "A security-focused Linux kernel applying a set of hardening patches. It also enables more upstream hardening features than the default kernel."},
+		{Item: "long-term", Info: "Long-term support (LTS) Linux kernel and modules."},
+		{Item: "real-time", Info: "This patch allows nearly all of the kernel to be preempted, with the exception of a few very small regions of code."},
+		{Item: "real-time long-term", Info: "The same as the Real-Time kernel but with long-term support."},
+		{Item: "zen", Info: "Result of a collaborative effort of kernel hackers to provide the best Linux kernel possible for everyday systems."},
+	}
+	textEditorOpts := []helpers.ItemInfo{
+		{Item: "nano", Info: "Console text editor based on pico with on-screen key bindings help."},
+		{Item: "vim", Info: "Advanced text editor that seeks to provide the power of the de-facto Unix editor 'vi', with a more complete feature set."},
+		{Item: "emacs", Info: "The extensible, customizable, self-documenting real-time display editor by GNU."},
+	}
 
-	fmt.Println(note)
-	answ := helpers.InputPrompt("Enter the packages that you want to install")
+	pkgs := []string{
+		"base",
+		"base-devel",
+		"linux-firmware",
+		"archlinux-keyring",
+		"wget",
+		"sudo",
+	}
 
-	if strings.ToLower(answ) == "default" {
-		defnote := helpers.PrintHiBlack("The default instalation packages are:")
-		defpacks := helpers.PrintYellow("base base-devel linux linux-firmware vim nano sudo archlinux-keyring wget")
-		fmt.Printf("%s %s\n", defnote, defpacks)
-		if helpers.YesNo("Do you want to use them?") {
-			cmds := []string{
-				"/mnt",
-				"base",
-				"base-devel",
-				"linux",
-				"linux-firmware",
-				"vim",
-				"nano",
-				"sudo",
-				"archlinux-keyring",
-				"wget",
-				"--noconfirm",
-				"--needed",
-			}
-			helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "pacstrap", cmds...)
-		} else {
-			installArch()
-		}
+	command := []string{
+		"/mnt",
+	}
+
+	helpers.ClearConsole()
+	helpers.PrintHeader("Pre-Install", "Installing Base System")
+	_, kernelChoice := helpers.PromptSelectInfo("Select your desired kernel", kernelsOpts)
+	helpers.ClearConsole()
+	helpers.PrintHeader("Pre-Install", "Installing Base System")
+	_, textEditorChoice := helpers.PromptSelectInfo("Select your desired TUI Text Editor", textEditorOpts)
+
+	switch kernelChoice {
+	case "stable":
+		pkgs = append(pkgs, "linux")
+	case "hardened":
+		pkgs = append(pkgs, "linux-hardened")
+	case "long-term":
+		pkgs = append(pkgs, "linux-lts")
+	case "real-time":
+		pkgs = append(pkgs, "linux-rt")
+	case "real-time long-term":
+		pkgs = append(pkgs, "linux-rt-lts")
+	case "zen":
+		pkgs = append(pkgs, "linux-zen")
+	default:
+		pkgs = append(pkgs, "linux")
+	}
+
+	switch textEditorChoice {
+	case "nano":
+		pkgs = append(pkgs, "nano")
+	case "vim":
+		pkgs = append(pkgs, "vim")
+	case "emacs":
+		pkgs = append(pkgs, "emacs")
+	default:
+		pkgs = append(pkgs, "nano")
+	}
+
+	helpers.ClearConsole()
+	helpers.PrintHeader("Pre-Install", "Installing Base System")
+	fmt.Println(helpers.PrintHiBlack(fmt.Sprintf("Current Packages are %s.", pkgs)))
+	if helpers.YesNo("Would you like to add more packages?") {
+		helpers.ClearConsole()
+		helpers.PrintHeader("Pre-Install", "Installing Base System")
+		fmt.Println(helpers.PrintHiBlack(fmt.Sprintf("Current Packages are %s.", pkgs)))
+		usrPkgs := helpers.InputPrompt("Enter the desired packages")
+		usrPkgsSplit := strings.Fields(usrPkgs)
+		pkgs = append(pkgs, usrPkgsSplit...)
+	}
+
+	command = append(command, pkgs...)
+	command = append(command, "--noconfirm")
+	command = append(command, "--needed")
+
+	helpers.ClearConsole()
+	helpers.PrintHeader("Pre-Install", "Installing Base System")
+	fmt.Println(helpers.PrintHiBlack(fmt.Sprintf("Current Packages are %s.", pkgs)))
+	fmt.Println(helpers.PrintHiBlack("If there was any typo in the addition of custom packages, say \"NO\" to re-run this part."))
+	if helpers.YesNo("Would you like to proceed with the installation?") {
+		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "pacstrap", command...)
 	} else {
-		pkgs := strings.Fields(strings.ToLower(answ))
-		cms := []string{
-			"/mnt",
-		}
-		cms = append(cms, pkgs...)
-		cms = append(cms, "--noconfirm")
-		cms = append(cms, "--needed")
-		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "pacstrap", cms...)
+		installArch()
 	}
 }
 
 func copyNecessaryFiles(cfgFile string) {
 	installLoc := helpers.JsonGetter(cfgFile, "installLocation")
 	helpers.CopyFile("/etc/pacman.d/mirrorlist", "/mnt/etc/pacman.d/mirrorlist")
-	helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "cp", "-Rv", installLoc, "/mnt/root/ArchInstall") // Too lazy to implement a CopyFolder function.
+	helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "cp", "-Rv", installLoc, "/mnt/root/ArchInstall") // Too lazy to implement a CopyFolder function.
 
 }
 
 func generateFileSystemTable() {
-	cmdOut := helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "genfstab", "-L", "/mnt")
+	cmdOut := helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "genfstab", "-L", "/mnt")
 	println(cmdOut)
 	if helpers.YesNo("Is this correct?") {
 		helpers.WriteToFile("/mnt/etc/fstab", cmdOut, 0644)
 	} else {
 		helpers.CountDown(5, "Rebooting")
-		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "reboot", "now")
+		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "reboot", "now")
 	}
 
 }
@@ -772,17 +828,15 @@ func installBootLoader(cfgFile string) {
 	bootType := helpers.JsonGetter(cfgFile, "bootSystem")
 	disk := helpers.JsonGetter(cfgFile, "disk")
 	if strings.ToLower(bootType) == "bios" {
-		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "grub-install", "--target=i386-pc", "--boot-directory=/mnt/boot", disk)
+		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "grub-install", "--target=i386-pc", "--boot-directory=/mnt/boot", disk)
 	} else {
-		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "pacstrap", "/mnt", "efibootmgr", "--noconfirm", "--needed")
+		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "pacstrap", "/mnt", "efibootmgr", "--noconfirm", "--needed")
 	}
 }
 
 func PreInstalll() {
 	var CONFIG_DIR string = fmt.Sprintf("%s/config", helpers.GetCurrDirPath())
 	var CONFIG_FILE string = fmt.Sprintf("%s/config.json", CONFIG_DIR)
-	//fmt.Println(CONFIG_FILE)
-	fmt.Println("PreInstall")
 
 	cISO := setCountryISO()
 	helpers.JsonUpdater(CONFIG_FILE, "countryISO", cISO, false)
@@ -790,7 +844,7 @@ func PreInstalll() {
 	setTimeDate()
 	formatDisk(CONFIG_FILE)
 
-	setupPacman(cISO)
+	setupPacman(cISO, CONFIG_FILE)
 
 	bootSys := bootSystem()
 	helpers.JsonUpdater(CONFIG_FILE, "bootSystem", bootSys, false)

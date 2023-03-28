@@ -102,7 +102,7 @@ func keyboardLayout() string {
 func loadKeyboardLayout(cfgFile string) {
 	keyLayout := helpers.JsonGetter(cfgFile, "keyboardLayout")
 	if helpers.YesNo(fmt.Sprintf("Do you want to load the keyboard layout %s?", keyLayout)) {
-		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "loadkeys", keyLayout)
+		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "loadkeys", keyLayout)
 	}
 }
 

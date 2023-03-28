@@ -1,8 +1,7 @@
 package helpers
 
-
 const (
-	_  = iota // Ignores the first value by assigning to blank identifier
+	_   = iota // Ignores the first value by assigning to blank identifier
 	KiB = 1 << (10 * iota)
 	MiB
 	GiB

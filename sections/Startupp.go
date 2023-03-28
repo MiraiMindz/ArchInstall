@@ -107,7 +107,7 @@ func keyboardLayout() string {
 func loadKeyboardLayout(cfgFile string) {
 	keyLayout := helpers.JsonGetter(cfgFile, "keyboardLayout")
 	if helpers.YesNo(fmt.Sprintf("Do you want to load the keyboard layout %s?", keyLayout)) {
-		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "loadkeys", keyLayout)
+		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "loadkeys", keyLayout)
 	}
 }
 
@@ -140,10 +140,10 @@ func setDiskVars() (string, uint64) {
 		}
 	}
 	fmt.Printf("%s: /dev/%s (%s) - %s\n",
-				selectedDisk.DriveType.String(),
-				selectedDisk.Name,
-				helpers.ByteSizeConverter(selectedDisk.SizeBytes),
-				selectedDisk.Model)
+		selectedDisk.DriveType.String(),
+		selectedDisk.Name,
+		helpers.ByteSizeConverter(selectedDisk.SizeBytes),
+		selectedDisk.Model)
 
 	if helpers.YesNo("Is this correct?") {
 		fmt.Printf("Selected device: /dev/%s\n", selectedDisk.Name)
@@ -175,7 +175,6 @@ func _askUserName() string {
 
 	return usrNm
 }
-
 
 func _askHostName() string {
 	hstNm := _readName("Enter your hostname")
@@ -233,8 +232,8 @@ func aurHelper() string {
 	helpers.ClearConsole()
 	helpers.PrintHeader("Startup", "AUR Helpers")
 
-	var aurHelpersList = []string{"aura", "nix", "pacaur", "paru", "picaur", "trizen", "yay", "none"}
-	fmt.Println("select \"none\" if you don't want any or \"nix\" to use the Nix Package Manager.")
+	var aurHelpersList = []string{"aura", "nix", "pacaur", "paru", "picaur", "pikaur", "trizen", "yay", "none"}
+	fmt.Println("select \"none\" if you don't want any or select \"nix\" to use the Nix Package Manager.")
 	_, answer := helpers.PromptSelect("Select your AUR Helper", aurHelpersList)
 	return answer
 }
