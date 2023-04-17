@@ -76,16 +76,64 @@ import (
 	"strings"
 )
 
+type Country struct {
+	Name   string
+	Code   string
+	Number int
+}
+
 func setCountryISO() string {
 	iso := helpers.CurlResponse("https://ifconfig.co/country-iso")
+	reflectorCountries := helpers.RunShellCommand(!helpers.COMMANDS_TEST_MODE, true, "reflector", "--list-countries")
+	cLines := strings.Split(reflectorCountries, "\n")
+	countries := []Country{}
+	countriesOpts := []string{}
+	var countriesMaps = make(map[string]Country)
+
+	// Parse each line
+	for i, line := range cLines {
+		if i > 1 {
+			fields := strings.Fields(line)
+			if len(fields) >= 3 {
+				// Extract country code from the second-to-last field
+				code := fields[len(fields)-2]
+
+				// Extract country name by joining all fields except the last two
+				name := strings.Join(fields[:len(fields)-2], " ")
+
+				country := Country{
+					Name: name,
+					Code: code,
+				}
+
+				// Parse integer from the last field
+				var number int
+				if _, err := fmt.Sscanf(fields[len(fields)-1], "%d", &number); err != nil {
+					fmt.Printf("Failed to parse number from line: %s\n", line)
+				} else {
+					country.Number = number
+					countries = append(countries, country)
+				}
+			}
+		}
+	}
+
+	for _, v := range countries {
+		x := fmt.Sprintf("[%s] - %s (%d)", v.Code, v.Name, v.Number)
+		countriesOpts = append(countriesOpts, x)
+		countriesMaps[x] = v
+	}
+
 	helpers.ClearConsole()
 	helpers.PrintHeader("Pre-Install", "Getting country ISO")
 	prompt := fmt.Sprintf("Country ISO detected to be %s, is this correct?", strings.ReplaceAll(iso, "\n", ""))
 	if helpers.YesNo(prompt) {
 		return strings.ReplaceAll(iso, "\n", "")
 	} else {
-		inputISO := helpers.InputPrompt("Enter your country ISO e.g: USA")
-		return strings.ReplaceAll(inputISO, "\n", "")
+		fmt.Println(helpers.PrintHiBlack("[CODE] - NAME (NUMBER OF MIRRORS)"))
+		_, _inputISO := helpers.PromptSelect("Select your country ISO", countriesOpts)
+		inputISO := countriesMaps[_inputISO]
+		return inputISO.Code
 	}
 }
 
@@ -118,7 +166,62 @@ func setupPacman(reflectorCountryISO, cfgFile string) {
 	helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "pacman", "-S", "--noconfirm", "--needed", "reflector", "grub")
 
 	//helpers.CopyFile("/etc/pacman.d/mirrorlist", "/etc/pacman.d/mirrorlist.backup")
-	reflectorArgs := []string{"-a", "48", "-c", reflectorCountryISO, "-f", "5", "-l", "20", "--sort", "rate", "--save", "/etc/pacman.d/mirrorlist"}
+	reflectorCountries := helpers.RunShellCommand(!helpers.COMMANDS_TEST_MODE, true, "reflector", "--list-countries")
+	cLines := strings.Split(reflectorCountries, "\n")
+	countries := []Country{}
+	countriesOpts := []string{}
+	selectedCountriesCodes := []string{}
+	var countriesMaps = make(map[string]Country)
+
+	// Parse each line
+	for i, line := range cLines {
+		if i > 1 {
+			fields := strings.Fields(line)
+			if len(fields) >= 3 {
+				// Extract country code from the second-to-last field
+				code := fields[len(fields)-2]
+
+				// Extract country name by joining all fields except the last two
+				name := strings.Join(fields[:len(fields)-2], " ")
+
+				country := Country{
+					Name: name,
+					Code: code,
+				}
+
+				// Parse integer from the last field
+				var number int
+				if _, err := fmt.Sscanf(fields[len(fields)-1], "%d", &number); err != nil {
+					fmt.Printf("Failed to parse number from line: %s\n", line)
+				} else {
+					country.Number = number
+					countries = append(countries, country)
+				}
+			}
+		}
+	}
+
+	for _, v := range countries {
+		x := fmt.Sprintf("[%s] - %s (%d)", v.Code, v.Name, v.Number)
+		countriesOpts = append(countriesOpts, x)
+		countriesMaps[x] = v
+	}
+
+	for _, v := range countries {
+		if v.Code == reflectorCountryISO {
+			if helpers.YesNo(fmt.Sprintf("Your country has %d mirrors in total, do you want to select another country?", v.Number)) {
+				fmt.Println(helpers.PrintHiBlack("[CODE] - NAME (NUMBER OF MIRRORS)"))
+				selectedCountries := helpers.PromptMultiSelect("Select your desired countries", countriesOpts)
+				for _, v := range selectedCountries {
+					selectedCountriesCodes = append(selectedCountriesCodes, countriesMaps[v].Code)
+				}
+			}
+		}
+	}
+
+	helpers.YesNo("")
+
+	reflectorArgs := []string{"-a", "48", "-c", strings.Join(selectedCountriesCodes, ","), "-f", "5", "-l", "20", "--sort", "rate", "--save", "/etc/pacman.d/mirrorlist"}
 	helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "reflector", reflectorArgs...)
 	helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "pacman", "-S", "--noconfirm", "--needed", "gptfdisk")
 

@@ -115,9 +115,9 @@ func main() {
 
 	if helpers.YesNo("Can we proceed to the installation?") {
 		//sections.Startupp()
-		//sections.PreInstalll()
+		sections.PreInstalll()
 		sections.BaseInstall()
-		//sections.UserConfig()
-		//sections.PostInstall()
+		sections.UserConfig()
+		sections.PostInstall()
 	}
 }

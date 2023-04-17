@@ -89,9 +89,10 @@ func setTimeZone() string {
 func keyboardLayout() string {
 	var returnValue string
 	var keyLists []string
-	for _, file := range helpers.FindFiles("/usr/share/kbd/keymaps", ".gz", ".map.gz", true) {
-		keyLists = append(keyLists, file)
-	}
+	//for _, file := range helpers.FindFiles("/usr/share/kbd/keymaps", ".gz", ".map.gz", true) {
+	//	keyLists = append(keyLists, file)
+	//}
+	keyLists = append(keyLists, helpers.FindFiles("/usr/share/kbd/keymaps", ".gz", ".map.gz", true)...)
 	helpers.ClearConsole()
 	helpers.PrintHeader("Startup", "Keyboard Layout")
 
@@ -228,6 +229,20 @@ func rootPasswd() string {
 	return passwd1
 }
 
+func selectInstallationType() string {
+	helpers.ClearConsole()
+	helpers.PrintHeader("Startup", "Installation Type")
+	installTypes := []string{
+		"PC",
+		"Server",
+		"Removable Medium",
+	}
+
+	_, selectedType := helpers.PromptSelect("Select your type of installation", installTypes)
+
+	return selectedType
+}
+
 func aurHelper() string {
 	helpers.ClearConsole()
 	helpers.PrintHeader("Startup", "AUR Helpers")
@@ -249,6 +264,9 @@ func Startupp() {
 	var CONFIG_FILE string = fmt.Sprintf("%s/config.json", CONFIG_DIR)
 
 	helpers.JsonUpdater(CONFIG_FILE, "installLocation", helpers.GetCurrDirPath(), false)
+
+	selectedInstallType := selectInstallationType()
+	helpers.JsonUpdater(CONFIG_FILE, "installType", selectedInstallType, false)
 
 	keyLayout := keyboardLayout()
 	helpers.JsonUpdater(CONFIG_FILE, "keyboardLayout", keyLayout, false)
