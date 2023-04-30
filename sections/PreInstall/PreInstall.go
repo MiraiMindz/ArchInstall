@@ -752,7 +752,7 @@ func installArch() {
 func copyNecessaryFiles(cfgFile string) {
 	installLoc := helpers.JsonGetter(cfgFile, "installLocation")
 	helpers.CopyFile("/etc/pacman.d/mirrorlist", "/mnt/etc/pacman.d/mirrorlist")
-	helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, "cp", "-Rv", installLoc, "/mnt/root/ArchInstall") // Too lazy to implement a CopyFolder function.
+	helpers.CopyDir(installLoc, "/mnt/root/ArchInstall")
 
 }
 

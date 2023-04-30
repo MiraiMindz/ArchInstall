@@ -353,20 +353,15 @@ func _createFileSystems(partitionName, partDisk, filesystem string) {
 	switch strings.ToLower(filesystem) {
 	case "btrfs":
 		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "mkfs.btrfs", "-L", partitionName, "-f")
-		break
 	case "ext4":
 		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "mkfs.ext4", "-L", partitionName)
-		break
 	case "swp":
 		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "mkswap", partDisk)
 		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "swapon", partDisk)
-		break
 	case "fat":
 		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "mkfs.fat", "-F32", "-n", partitionName, partDisk)
-		break
 	case "vfat":
 		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "mkfs.vfat", "-F32", "-n", partitionName, partDisk)
-		break
 	}
 }
 
@@ -666,7 +661,7 @@ func setDiskPartVars(cfgFile, disk string, isSWAPSet bool, swapSize int) [][]str
 				restSize, rootLabel, sgRoot, rootFS, rootPartCode = _setRootPart(homePart, filePart, morePart, isX64, dSizePercent, restSize, dSize)
 				partLists = _setMorePart(filePart, restSize, dSize)
 			} else {
-				restSize, rootLabel, sgRoot, rootFS, rootPartCode = _setRootPart(homePart, filePart, morePart, isX64, dSizePercent, restSize, dSize)
+				_, rootLabel, sgRoot, rootFS, rootPartCode = _setRootPart(homePart, filePart, morePart, isX64, dSizePercent, restSize, dSize)
 			}
 		}
 	}
@@ -831,6 +826,9 @@ func installArch() {
 		{Item: "nano", Info: "Console text editor based on pico with on-screen key bindings help."},
 		{Item: "vim", Info: "Advanced text editor that seeks to provide the power of the de-facto Unix editor 'vi', with a more complete feature set."},
 		{Item: "emacs", Info: "The extensible, customizable, self-documenting real-time display editor by GNU."},
+		{Item: "neovim", Info: "Is a fork of Vim aiming to improve the codebase, allowing for easier implementation of APIs, improved user experience and plugin implementation."},
+		{Item: "helix", Info: "Is a modal text editor written in Rust and inspired by Neovim and Kakoune. It implements changes to the traditional Vim workflow similar to Kakoune's, like selection-based editing and multi-cursor support. Helix bundles and enables many features out of the box and does not yet have a plugin system. It does have adding custom language support. Therefore, it can be considered easier to set up but less customizable than Vim and similar editors."},
+		{Item: "kakoune", Info: "Is a modal text editor. It is inspired by Vim and similar alternatives, but tries to improve the text editing workflow as well as fit better to the Unix philosophy. Besides modal editing, two other main concepts are selection based editing, and multi-cursor editing. It has an interactive help system, and supports many languages."},
 	}
 
 	pkgs := []string{
@@ -877,6 +875,12 @@ func installArch() {
 		pkgs = append(pkgs, "vim")
 	case "emacs":
 		pkgs = append(pkgs, "emacs")
+	case "neovim":
+		pkgs = append(pkgs, "neovim")
+	case "helix":
+		pkgs = append(pkgs, "helix")
+	case "kakoune":
+		pkgs = append(pkgs, "kakoune")
 	default:
 		pkgs = append(pkgs, "nano")
 	}
@@ -910,16 +914,18 @@ func installArch() {
 
 func copyNecessaryFiles(cfgFile string) {
 	installLoc := helpers.JsonGetter(cfgFile, "installLocation")
-	helpers.CopyFile("/etc/pacman.d/mirrorlist", "/mnt/etc/pacman.d/mirrorlist")
-	helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "cp", "-Rv", installLoc, "/mnt/root/ArchInstall") // Too lazy to implement a CopyFolder function.
+	//helpers.CopyFile("/etc/pacman.d/mirrorlist", "/mnt/etc/pacman.d/mirrorlist")
+	//helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "cp", "-Rv", installLoc, "/mnt/root/ArchInstall") // Too lazy to implement a CopyFolder function.
+
+	helpers.CopyDir(installLoc, "/mnt/root/ArchInstall")
 
 }
 
 func generateFileSystemTable() {
-	cmdOut := helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "genfstab", "-L", "/mnt")
+	cmdOut := helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "genfstab", "-U", "/mnt")
 	println(cmdOut)
 	if helpers.YesNo("Is this correct?") {
-		helpers.WriteToFile("/mnt/etc/fstab", cmdOut, 0644)
+		//helpers.WriteToFile("/mnt/etc/fstab", cmdOut, 0644)
 	} else {
 		helpers.CountDown(5, "Rebooting")
 		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "reboot", "now")
@@ -934,6 +940,8 @@ func installBootLoader(cfgFile string) {
 		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "grub-install", "--target=i386-pc", "--boot-directory=/mnt/boot", disk)
 	} else {
 		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "pacstrap", "/mnt", "efibootmgr", "--noconfirm", "--needed")
+		// grub-install --target=x86_64-efi --efi-directory=esp --bootloader-id=GRUB
+		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "grub-install", "--target=x86_64-efi", "--efi-directory=/mnt/boot", "--bootloader-id=GRUB")
 	}
 }
 
@@ -954,6 +962,8 @@ func PreInstalll() {
 
 	formatDisk(CONFIG_FILE)
 	partitionDisk(CONFIG_FILE)
+	generateFileSystemTable()
+	installBootLoader(CONFIG_FILE)
 	installArch()
 	copyNecessaryFiles(CONFIG_FILE)
 }

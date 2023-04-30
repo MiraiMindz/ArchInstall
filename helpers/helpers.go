@@ -15,6 +15,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	//"syscall"
 	"time"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -677,4 +679,252 @@ func AppendToFile(filePath, textToAppend string) {
 	Check(err)
 	defer f.Close()
 	_, err = f.WriteString(fmt.Sprintf("%s\n", textToAppend))
+	Check(err)
+}
+
+func SudoExecute(testMode, returnOutput bool, name string, args ...string) string {
+	if testMode {
+		x := []string{name}
+		x = append(x, args...)
+		fmt.Println(x)
+		return ""
+	} else {
+		sudoArgs := []string{"sudo", name}
+		sudoArgs = append(sudoArgs, args...)
+		sudoCommand := strings.Join(sudoArgs, " ")
+		cmd := exec.Command("/bin/sh", "-c", sudoCommand)
+
+		cmd.Stdin = os.Stdin
+		if returnOutput {
+			out, err := cmd.Output()
+			Check(err)
+			return string(out)
+		} else {
+			cmd.Stdout = os.Stdout
+			cmd.Run()
+			return ""
+		}
+	}
+}
+
+func RunShellCommandStdIn(testMode, returnOutput bool, stdIn, name string, args ...string) string {
+	var cmd *exec.Cmd
+	if testMode {
+		x := []string{name}
+		x = append(x, args...)
+		fmt.Println(x)
+		return ""
+	} else {
+		if len(args) != 0 {
+			cmd = exec.Command(name, args...)
+		} else {
+			cmd = exec.Command(name)
+		}
+		cmd.Stdin = strings.NewReader(stdIn)
+		if returnOutput {
+			out, err := cmd.Output()
+			Check(err)
+			return string(out)
+		} else {
+			cmd.Stdout = os.Stdout
+			cmd.Run()
+			return ""
+		}
+	}
+}
+
+// CopyDir copies the content of src to dst. src should be a full path. SOURCE: https://stackoverflow.com/a/72246196
+func CopyDir(src, dst string) error {
+
+	return filepath.Walk(src, func(path string, info fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// copy to this path
+		outpath := filepath.Join(dst, strings.TrimPrefix(path, src))
+
+		if info.IsDir() {
+			os.MkdirAll(outpath, info.Mode())
+			return nil // means recursive
+		}
+
+		// handle irregular files
+		if !info.Mode().IsRegular() {
+			switch info.Mode().Type() & os.ModeType {
+			case os.ModeSymlink:
+				link, err := os.Readlink(path)
+				if err != nil {
+					return err
+				}
+				return os.Symlink(link, outpath)
+			}
+			return nil
+		}
+
+		// copy contents of regular file efficiently
+
+		// open input
+		in, _ := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer in.Close()
+
+		// create output
+		fh, err := os.Create(outpath)
+		if err != nil {
+			return err
+		}
+		defer fh.Close()
+
+		// make it the same
+		fh.Chmod(info.Mode())
+
+		// copy content
+		writtenBytes, err := io.Copy(fh, in)
+		fmt.Printf("Copied %d bytes from %s to %s\n", writtenBytes, in.Name(), fh.Name())
+		return err
+	})
+}
+
+func GetEnvironmentVariables(variable string) string {
+	// cmd := exec.Command("sh", "-c", fmt.Sprintf("echo $%s", variable))
+	// out, err := cmd.Output()
+	// Check(err)
+	// return string(out)
+	return os.Getenv(variable)
+}
+
+func IsCommandAvailable(name string) bool {
+	cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("command -v %s", name))
+	if err := cmd.Run(); err != nil {
+		return false
+	}
+	return true
+}
+
+func ExportVariable(name, value string) {
+	err := os.Setenv(name, value)
+	Check(err)
+}
+
+// Automates the process of running shell commands
+func RunShellCommandDir(testMode, returnOutput bool, dir, name string, args ...string) string {
+	if testMode {
+		x := []string{name}
+		x = append(x, args...)
+		fmt.Println(x)
+		return ""
+	} else {
+		cmd := exec.Command(name, args...)
+		cmd.Dir = dir
+		cmd.Stdin = os.Stdin
+		if returnOutput {
+			out, err := cmd.Output()
+			Check(err)
+			return string(out)
+		} else {
+			cmd.Stdout = os.Stdout
+			cmd.Run()
+			return ""
+		}
+	}
+}
+
+func SudoExecuteDir(testMode, returnOutput bool, dir, name string, args ...string) string {
+	if testMode {
+		x := []string{name}
+		x = append(x, args...)
+		fmt.Println(x)
+		return ""
+	} else {
+		sudoArgs := []string{"sudo", name}
+		sudoArgs = append(sudoArgs, args...)
+		sudoCommand := strings.Join(sudoArgs, " ")
+		cmd := exec.Command("/bin/sh", "-c", sudoCommand)
+		cmd.Dir = dir
+		cmd.Stdin = os.Stdin
+		if returnOutput {
+			out, err := cmd.Output()
+			Check(err)
+			return string(out)
+		} else {
+			cmd.Stdout = os.Stdout
+			cmd.Run()
+			return ""
+		}
+	}
+}
+
+// func GetMapKeys(cMap map[interface{}]interface{}) []interface{} {
+// 	// Use make() to create the slice for better performance
+// 	mapKeys := make([]interface{}, 0, len(cMap))
+
+// 	// We only need the keys
+// 	for key := range cMap {
+// 		mapKeys = append(mapKeys, key)
+// 	}
+
+// 	return mapKeys
+// }
+
+// func GetMapKeys(cMap map[string]map[string]string) []interface{} {
+// 	mapKeys := make([]interface{}, 0, len(cMap))
+// 	for key := range cMap {
+// 		mapKeys = append(mapKeys, key)
+// 	}
+
+// 	return mapKeys
+// }
+
+func GetMapKeys(m interface{}) []string {
+	keys := []string{}
+	switch val := m.(type) {
+	case map[string]interface{}:
+		for k := range val {
+			keys = append(keys, k)
+			// nestedKeys := GetMapKeys(val[k])
+			// keys = append(keys, nestedKeys...)
+		}
+	case map[string]map[string]string:
+		for k := range val {
+			keys = append(keys, k)
+			// nestedKeys := GetMapKeys(val[k])
+			// keys = append(keys, nestedKeys...)
+		}
+	case map[string]string:
+		for k := range val {
+			keys = append(keys, k)
+			// nestedKeys := GetMapKeys(val[k])
+			// keys = append(keys, nestedKeys...)
+		}
+	case []string:
+		for _, k := range val {
+			keys = append(keys, k)
+			// nestedKeys := GetMapKeys(val[k])
+			// keys = append(keys, nestedKeys...)
+		}
+	}
+	return keys
+}
+
+func GetKeysWithParents(m map[string]interface{}, parentKeys []string) map[string][]string {
+	result := make(map[string][]string)
+	for k, v := range m {
+		keys := make([]string, len(parentKeys)+1)
+		copy(keys, parentKeys)
+		keys[len(parentKeys)] = k
+		switch v := v.(type) {
+		case map[string]interface{}:
+			result[k] = keys
+			nestedMap := GetKeysWithParents(v, keys)
+			for nestedK, nestedV := range nestedMap {
+				result[nestedK] = nestedV
+			}
+		default:
+			result[k] = keys
+		}
+	}
+	return result
 }

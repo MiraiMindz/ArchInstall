@@ -1,0 +1,12 @@
+{
+    "Instructions": [
+        {
+            "Command": "EXECUTE",
+            "UseSudo": false,
+            "Source": "echo",
+            "Args": [
+                "\"Hello World\""
+            ]
+        }
+    ]
+}

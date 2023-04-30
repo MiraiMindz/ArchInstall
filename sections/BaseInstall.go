@@ -118,7 +118,7 @@ func installHelper(cfgFile string) {
 	case "none":
 		return
 	default:
-		helpers.InstallAurPkgWithoutHelper(pkgHelper)
+		//helpers.InstallAurPkgWithoutHelper(pkgHelper)
 	}
 }
 
@@ -246,6 +246,7 @@ func _selectStackWM(cfgFile string) {
 			pkgName = "xfwm4"
 		}
 		helpers.JsonUpdater(cfgFile, "basePackages", pkgName, false)
+		_selectBgImageViewer(cfgFile)
 		_selectShell(cfgFile)
 		_selectTerminal(cfgFile)
 		_selectDisplayManager(cfgFile)
@@ -288,6 +289,7 @@ func _selectTilingWM(cfgFile string) {
 		}
 
 		helpers.JsonUpdater(cfgFile, "basePackages", pkgName, false)
+		_selectBgImageViewer(cfgFile)
 		_selectShell(cfgFile)
 		_selectTerminal(cfgFile)
 		_selectDisplayManager(cfgFile)
@@ -323,6 +325,7 @@ func _selectDynamicWM(cfgFile string) {
 			pkgName = "xmonad"
 		}
 		helpers.JsonUpdater(cfgFile, "basePackages", pkgName, false)
+		_selectBgImageViewer(cfgFile)
 		_selectShell(cfgFile)
 		_selectTerminal(cfgFile)
 		_selectDisplayManager(cfgFile)
@@ -353,6 +356,28 @@ func _selectWM(cfgFile string) {
 	default:
 		_environmentSetup(cfgFile)
 	}
+}
+
+func _selectBgImageViewer(cfgFile string) {
+	var pkgName string
+	bgImgViewerOpts := []helpers.ItemInfo{
+		{Item: "feh", Info: "Is a lightweight image viewer aimed mainly at users of command line interfaces. Can also be used to display background images on systems running the X window system."},
+		{Item: "nitrogen", Info: "Is a fast and lightweight (GTK2) desktop background browser and setter for X Window."},
+	}
+
+	helpers.ClearConsole()
+	helpers.PrintHeader("Base Install", "Install Base System - Background Image")
+
+	_, bgImgSelected := helpers.PromptSelectInfo("Select your Background Image Setter", bgImgViewerOpts)
+	switch strings.ToLower(bgImgSelected) {
+	case "feh":
+		pkgName = "feh"
+	case "nitrogen":
+		pkgName = "nitrogen"
+	}
+	upPkg := fmt.Sprintf("%s|%s", helpers.JsonGetter(cfgFile, "basePackages"), pkgName)
+	helpers.JsonUpdater(cfgFile, "userBackgroundImagerViewer", pkgName, false)
+	helpers.JsonUpdater(cfgFile, "basePackages", upPkg, false)
 }
 
 func _selectShell(cfgFile string) {
@@ -398,6 +423,7 @@ func _selectShell(cfgFile string) {
 	}
 
 	upPkg := fmt.Sprintf("%s|%s", helpers.JsonGetter(cfgFile, "basePackages"), pkgName)
+	helpers.JsonUpdater(cfgFile, "userShell", pkgName, false)
 	helpers.JsonUpdater(cfgFile, "basePackages", upPkg, false)
 }
 
@@ -418,7 +444,7 @@ func _selectTerminal(cfgFile string) {
 		{Item: "urxvt", Info: "Highly extendable unicode enabled terminal emulator featuring tabbing, url launching, a Quake style drop-down mode and pseudo-transparency."},
 		{Item: "xterm", Info: "Simple terminal emulator for X. It provides DEC VT102 and Tektronix 4014 terminals for programs that cannot use the window system directly."},
 		{Item: "zutty", Info: "A high-end terminal for low-end systems."},
-		{Item: "GnomeConsole", Info: "Formerly known as King’s Cross, a simple user-friendly terminal emulator for the GNOME desktop."},
+		{Item: "GnomeConsole", Info: "Formerly known as King's Cross, a simple user-friendly terminal emulator for the GNOME desktop."},
 		{Item: "GNOMETerminal", Info: "A terminal emulator included in the GNOME desktop with support for Unicode."},
 		{Item: "LXT", Info: "Desktop independent terminal emulator for LXDE."},
 		{Item: "MATE", Info: "A fork of GNOME terminal for the MATE desktop."},
@@ -483,6 +509,7 @@ func _selectTerminal(cfgFile string) {
 	}
 
 	upPkg := fmt.Sprintf("%s|%s", helpers.JsonGetter(cfgFile, "basePackages"), pkgName)
+	helpers.JsonUpdater(cfgFile, "userTerminal", pkgName, false)
 	helpers.JsonUpdater(cfgFile, "basePackages", upPkg, false)
 }
 
@@ -517,6 +544,7 @@ func _selectDisplayManager(cfgFile string) {
 	}
 
 	upPkg := fmt.Sprintf("%s|%s", helpers.JsonGetter(cfgFile, "basePackages"), pkgName)
+	helpers.JsonUpdater(cfgFile, "userDisplayManager", pkgName, false)
 	helpers.JsonUpdater(cfgFile, "basePackages", upPkg, false)
 }
 
@@ -541,6 +569,7 @@ func _selectCompositor(cfgFile string) {
 	}
 
 	upPkg := fmt.Sprintf("%s|%s", helpers.JsonGetter(cfgFile, "basePackages"), pkgName)
+	helpers.JsonUpdater(cfgFile, "userCompositor", pkgName, false)
 	helpers.JsonUpdater(cfgFile, "basePackages", upPkg, false)
 }
 
@@ -1201,20 +1230,21 @@ func setLocaleTimezone(cfgFile string) {
 }
 
 func setUser(cfgFile string) {
+	helpers.ClearConsole()
+	helpers.PrintHeader("Base Install", "Adding User")
 	userName := helpers.JsonGetter(cfgFile, "userName")
 	whoamiOutput := helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, true, "whoami")
 	if strings.ToLower(whoamiOutput) == "root" {
-		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "useradd", "-m", "-G", "wheel", "-s", "/bin/bash", userName)
-		// COPY SCRIPTS TO USER HOME DIR
+		helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "useradd", "-m", "-G", "wheel", "-s", fmt.Sprintf("/bin/%s", helpers.JsonGetter(cfgFile, "userShell")), userName)
+
+		stdIn := fmt.Sprintf("%s:%s", helpers.JsonGetter(cfgFile, "userName"), helpers.JsonGetter(cfgFile, "userPassword"))
+		helpers.RunShellCommandStdIn(helpers.COMMANDS_TEST_MODE, false, stdIn, "chpasswd")
 	}
 }
 
-//!/////////////////////////////!//
-//! SET STEVEN BLACK HOSTS HERE
-//! SET HOSTS FILE
-//!/////////////////////////////!//
-
 func setHostsFiles(cfgFile string) {
+	helpers.ClearConsole()
+	helpers.PrintHeader("Base Install", "Hosts Files")
 	var socialHosts, gamblingHosts, pornHosts, fakeNewsHosts bool
 	hostsLock := fmt.Sprintf("%s/hosts.txt", helpers.GetCurrDirPath())
 	//hostsLock := "/etc/hosts"
@@ -1348,11 +1378,39 @@ func setHostsFiles(cfgFile string) {
 	}
 }
 
+func setHostName(cfgFile string) {
+	helpers.ClearConsole()
+	helpers.PrintHeader("Base Install", "Hostname")
+	hostName := helpers.JsonGetter(cfgFile, "hostName")
+	hostNameLocation := fmt.Sprintf("%s/hostname.txt", helpers.GetCurrDirPath())
+	// hostNameLocation := "/etc/hostname"
+	helpers.WriteToFile(hostNameLocation, hostName, 0644)
+}
+
+func copyScriptToUserHome(cfgFile string) {
+	helpers.ClearConsole()
+	helpers.PrintHeader("Base Install", "Copying Script to User Home")
+	userName := helpers.JsonGetter(cfgFile, "userName")
+	helpers.ExportVariable("USERNAME", userName)
+	sourceDir := fmt.Sprintf("%s/%s", helpers.GetEnvironmentVariables("HOME"), "ArchInstall")
+	destinationDir := fmt.Sprintf("/home/%s/ArchInstall", userName)
+	helpers.CopyDir(sourceDir, destinationDir)
+	helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "chown", "-R", userName, destinationDir)
+}
+
 func BaseInstall() {
 	var CONFIG_DIR string = fmt.Sprintf("%s/config", helpers.GetCurrDirPath())
 	var CONFIG_FILE string = fmt.Sprintf("%s/config.json", CONFIG_DIR)
-	//setLocaleTimezone(CONFIG_FILE)
-	//installHelper(CONFIG_FILE)
-	//installBaseSystem(CONFIG_FILE)
+	setNetworkConnection()
+	setLocaleTimezone(CONFIG_FILE)
+	setMakeVars()
+	setPacman(CONFIG_FILE)
+	installHelper(CONFIG_FILE)
+	installMicroCode()
+	installGPUDrivers()
+	installBaseSystem(CONFIG_FILE)
 	setHostsFiles(CONFIG_FILE)
+	setUser(CONFIG_FILE)
+	setHostName(CONFIG_FILE)
+	copyScriptToUserHome(CONFIG_FILE)
 }

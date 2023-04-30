@@ -45,19 +45,19 @@ Pre-Install Steps:
 	[x] - Generate File System Table (FSTAB)
 	[x] - Install GRUB
 Base-Install Steps:
-	[ ] - Set Network
-	[ ] - Config Pacman (again)
-	[ ] - Set MAKEPKG Config
-	[ ] - Set Language
-	[ ] - Set Locale
-	[ ] - Set Time Zone
-	[ ] - Set NOPASSWD SUDO (temporary)
-	[ ] - Config Pacman (again)
-	[ ] - Installing Setup Packages
-	[ ] - Install Microcode
-	[ ] - Install Graphics Cards (NVIDIA|AMD|INTEGRATED|INTEL)
-	[ ] - Set User
-	[ ] - Set Hosts file
+	[x] - Set Network
+	[x] - Config Pacman (again)
+	[x] - Set MAKEPKG Config
+	[x] - Set Language
+	[x] - Set Locale
+	[x] - Set Time Zone
+	[x] - Set NOPASSWD SUDO (temporary)
+	[x] - Config Pacman (again)
+	[x] - Installing Setup Packages
+	[x] - Install Microcode
+	[x] - Install Graphics Cards (NVIDIA|AMD|INTEGRATED|INTEL)
+	[x] - Set User
+	[x] - Set Hosts file
 User Configuration Steps:
 	[ ] - Creates .cache
 	[ ] - Sets SHELL
@@ -115,9 +115,11 @@ func main() {
 
 	if helpers.YesNo("Can we proceed to the installation?") {
 		//sections.Startupp()
-		sections.PreInstalll()
-		sections.BaseInstall()
+		//sections.PreInstalll()
+		//sections.BaseInstall()
 		sections.UserConfig()
-		sections.PostInstall()
+		// sections.PostInstall()
+		//fmt.Println(helpers.GetEnvironmentVariables("HOME"))
+		//helpers.CopyDir("/media/Arquivos/Programming/Projects/ArchInstall/a", "/media/Arquivos/Programming/Projects/ArchInstall/")
 	}
 }

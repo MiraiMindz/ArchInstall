@@ -9,3 +9,5 @@ set +a
 
 ( bash $SCRIPTS_DIR/execStartup.sh )
 ( bash $SCRIPTS_DIR/execPreInstall.sh )
+( bash $SCRIPTS_DIR/execBaseInstall.sh )
+( arch-chroot /mnt /usr/bin/runuser -u $USERNAME -- /home/$USERNAME/ArchInstall/scripts/execUserConfig.sh )
