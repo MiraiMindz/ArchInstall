@@ -1,4 +1,4 @@
-package sections
+package main
 
 /*
 	https://zetcode.com/golang/exec-command/
@@ -941,7 +941,7 @@ func installBootLoader(cfgFile string) {
 	}
 }
 
-func PreInstalll() {
+func main() {
 	var CONFIG_DIR string = fmt.Sprintf("%s/config", helpers.GetCurrDirPath())
 	var CONFIG_FILE string = fmt.Sprintf("%s/config.json", CONFIG_DIR)
 

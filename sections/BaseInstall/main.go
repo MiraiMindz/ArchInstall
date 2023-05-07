@@ -1,4 +1,4 @@
-package sections
+package main
 
 import (
 	"ArchInstall/helpers"
