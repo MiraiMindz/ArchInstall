@@ -1,4 +1,4 @@
-package sections
+package main
 
 /*******************************************************************************
 THIS  FILE  ONLY EXISTS  FOR TESTING, THE  CORRECT FILE IS LOCATED AT ./Startup/
@@ -17,6 +17,29 @@ import (
 
 	"github.com/jaypipes/ghw"
 )
+
+
+func welcomeScreenPrint() {
+
+	helpers.PrintAsciiArt()
+
+	fmt.Println(helpers.PrintYellow("Some quick notes about this script:"))
+	fmt.Println(helpers.PrintHiBlack("\tIt doesn't supports Wayland."))
+	fmt.Println(helpers.PrintHiBlack("\tAs of ArchISO, the default keyboard layout is en-US, so, be careful when typing if you use other layout."))
+	fmt.Println(helpers.PrintHiBlack("\tThis was made for me to deploy my system easily, so there is a lot of personal taste here."))
+	fmt.Println(helpers.PrintHiBlack("\tYet it's a very broad script, so you might be able to use it for bootstrapping your own system/rice."))
+	fmt.Println(helpers.PrintHiBlack("\tI tried to automate/simplify everything that I could from the installation guide."))
+	fmt.Println(helpers.PrintHiBlack("\tIt uses the standard 1024B measurement instead of 1000B (this means GiB instead of GB)"))
+	fmt.Println(helpers.PrintHiBlack("\tThis script is divided in 5 sections:"))
+	fmt.Println(helpers.PrintHiBlack("\t\t1. Startup: Only sets some basic options like keyboard layout, HDD/SDD, etc..."))
+	fmt.Println(helpers.PrintHiBlack("\t\t2. Pre-Install: Setup the drive and pacstrap for installation."))
+	fmt.Println(helpers.PrintHiBlack("\t\t3. Base-Install: Installs and configure the system, installs base packages and creates users."))
+	fmt.Println(helpers.PrintHiBlack("\t\t4. User Config: User customizations and custom (AUR/NIX) packages."))
+	fmt.Println(helpers.PrintHiBlack("\t\t5. Post-Install: Enables services, clear ups the installation."))
+
+	fmt.Println("All of this being said. I would like to highlight that this was a fun project to work on.")
+	fmt.Print("Considers following me on GitHub @MiraiMindz.\n\n")
+}
 
 func createConfigFile(filePath string) {
 	file_loc := fmt.Sprintf("%s/config.json", filePath)
@@ -250,43 +273,48 @@ func aurHelper() string {
 	return answer
 }
 
-func Startupp() {
+func main() {
 	var CONFIG_DIR string = fmt.Sprintf("%s/config", helpers.GetCurrDirPath())
+	welcomeScreenPrint()
 
-	if helpers.YesNo("Run checks?") {
-		checks()
+	if helpers.YesNo("Can we proceed to the installation?") {
+
+
+		if helpers.YesNo("Run checks?") {
+			checks()
+		}
+
+		createConfigFile(CONFIG_DIR)
+		var CONFIG_FILE string = fmt.Sprintf("%s/config.json", CONFIG_DIR)
+
+		helpers.JsonUpdater(CONFIG_FILE, "installLocation", helpers.GetCurrDirPath(), false)
+
+		selectedInstallType := selectInstallationType()
+		helpers.JsonUpdater(CONFIG_FILE, "installType", selectedInstallType, false)
+
+		keyLayout := keyboardLayout()
+		helpers.JsonUpdater(CONFIG_FILE, "keyboardLayout", keyLayout, false)
+		loadKeyboardLayout(CONFIG_FILE)
+
+		timeZone := setTimeZone()
+		helpers.JsonUpdater(CONFIG_FILE, "timeZone", timeZone, false)
+
+		disk, diskSize := setDiskVars()
+		helpers.JsonUpdater(CONFIG_FILE, "mountOptions", "defaults", false)
+		helpers.JsonUpdater(CONFIG_FILE, "disk", disk, false)
+		helpers.JsonUpdater(CONFIG_FILE, "diskSize", fmt.Sprint(diskSize), false)
+
+		userName, hostName := userInfo()
+		helpers.JsonUpdater(CONFIG_FILE, "userName", userName, false)
+		helpers.JsonUpdater(CONFIG_FILE, "hostName", hostName, false)
+
+		passwd := setPassword()
+		helpers.JsonUpdater(CONFIG_FILE, "userPassword", passwd, false)
+
+		rPasswd := rootPasswd()
+		helpers.JsonUpdater(CONFIG_FILE, "rootPassword", rPasswd, false)
+
+		aurH := aurHelper()
+		helpers.JsonUpdater(CONFIG_FILE, "aurHelper", aurH, false)
 	}
-
-	createConfigFile(CONFIG_DIR)
-	var CONFIG_FILE string = fmt.Sprintf("%s/config.json", CONFIG_DIR)
-
-	helpers.JsonUpdater(CONFIG_FILE, "installLocation", helpers.GetCurrDirPath(), false)
-
-	selectedInstallType := selectInstallationType()
-	helpers.JsonUpdater(CONFIG_FILE, "installType", selectedInstallType, false)
-
-	keyLayout := keyboardLayout()
-	helpers.JsonUpdater(CONFIG_FILE, "keyboardLayout", keyLayout, false)
-	loadKeyboardLayout(CONFIG_FILE)
-
-	timeZone := setTimeZone()
-	helpers.JsonUpdater(CONFIG_FILE, "timeZone", timeZone, false)
-
-	disk, diskSize := setDiskVars()
-	helpers.JsonUpdater(CONFIG_FILE, "mountOptions", "defaults", false)
-	helpers.JsonUpdater(CONFIG_FILE, "disk", disk, false)
-	helpers.JsonUpdater(CONFIG_FILE, "diskSize", fmt.Sprint(diskSize), false)
-
-	userName, hostName := userInfo()
-	helpers.JsonUpdater(CONFIG_FILE, "userName", userName, false)
-	helpers.JsonUpdater(CONFIG_FILE, "hostName", hostName, false)
-
-	passwd := setPassword()
-	helpers.JsonUpdater(CONFIG_FILE, "userPassword", passwd, false)
-
-	rPasswd := rootPasswd()
-	helpers.JsonUpdater(CONFIG_FILE, "rootPassword", rPasswd, false)
-
-	aurH := aurHelper()
-	helpers.JsonUpdater(CONFIG_FILE, "aurHelper", aurH, false)
 }
