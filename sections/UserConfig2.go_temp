@@ -1,0 +1,501 @@
+package sections
+
+import (
+	"ArchInstall/helpers"
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+
+	//"os"
+	"strings"
+)
+
+/* This file will guide the user through the installation and configuration
+Of custom installed packages and their configuration, or it's ricing.
+
+This part of the script will read a CUSTOM_CUSTOMIZATION_FILE if all of the instructions
+to install any custom rices with a single file.
+
+This file must be inside user .dotfiles repo, and this repo should follow the folder specification structure.*/
+
+/* FOLDER SPECIFICATION STRUCTURE:
+
+.dotfiles/
+├─┬── Catppuccin/
+│ ├──┬── Terminals/
+│ │  ├────── Terminator/
+│ │  │       ├────── config
+│ │  │       ├────── additional_packages.json
+│ │  │       └────── install.json
+│ │  └────── Alacritty/
+│ │          ├────── config
+│ │          ├────── additional_packages.json
+│ │          └────── install.json
+│ ├──┬── CodeEditors/
+│ │  ├────── VisualStudioCode/
+│ │  │       ├────── extensions.json
+│ │  │       ├────── profiles.json
+│ │  │       ├────── settings.json
+│ │  │       └────── install.json
+│ │  └────── NeoVim/
+│ │          ├────── configs/
+│ │          ├────── extensions.json
+│ │          ├────── settings.json
+│ │          └────── install.json
+│ ├──┬── Shells/
+│ │  ├────── BASH/
+│ │  │       ├────── Aliases.json
+│ │  │       ├────── Functions.json
+│ │  │       ├────── Prompts.json
+│ │  │       └────── install.json
+│ │  └────── ZSH/
+│ │          ├────── Aliases.json
+│ │          ├────── Functions.json
+│ │          ├────── Prompts.json
+│ │          └────── install.json
+│ ├──┬── CliTools/
+│ │  ├────── Bat/
+│ │  │       ├────── config
+│ │  │       └────── install.json
+│ │  ├────── CAVA/
+│ │  │       ├────── config
+│ │  │       └────── install.json
+│ │  └────── ls/
+│ │          ├────── config
+│ │          └────── install.json
+│ ├──┬── SystemPackages/
+│ │  ├────── DesktopEnvironment/
+│ │  │       ├────── KDE/
+│ │  │       │       ├────── configs/
+│ │  │       │       └────── install.json
+│ │  │       └────── GNOME/
+│ │  │               ├────── configs/
+│ │  │               └────── install.json
+│ │  ├────── WindowManager/
+│ │  │       ├────── i3/
+│ │  │       │       ├────── config
+│ │  │       │       └────── install.json
+│ │  │       └────── BSPWM/
+│ │  │               ├────── config
+│ │  │               └────── install.json
+│ │  ├────── DisplayManager/
+│ │  │       ├────── SDDM/
+│ │  │       │       ├────── configs/
+│ │  │       │       └────── install.json
+│ │  │       └────── LXDM/
+│ │  │               ├────── configs/
+│ │  │               └────── install.json
+│ │  └────── Compositor/
+│ │          ├────── Picom/
+│ │          │       ├────── config
+│ │          │       └────── install.json
+│ │          └────── XCOMP/
+│ │                  ├────── config
+│ │                  └────── install.json
+│ ├──┬── UserApps/
+│ │  └────── Discord/
+│ │          ├────── CustomStyles.css
+│ │          └────── install.json
+│ ├──┬── Assets/
+│ │  ├────── Wallpapers/
+│ │  │       ├────── LockScreen/
+│ │  │       │       ├────── Wallpaper01.png
+│ │  │       │       └────── Wallpaper02.png
+│ │  │       ├────── WindowManager/
+│ │  │       │       ├────── Wallpaper01.png
+│ │  │       │       └────── Wallpaper02.png
+│ │  │       └────── DesktopManager/
+│ │  │               ├────── Wallpaper01.png
+│ │  │               └────── Wallpaper02.png
+│ │  └────── ProfilePictures/
+│ │          ├────── ProfilePicture01.png
+│ │          └────── ProfilePicture02.png
+│ └───── customization.json
+│
+└──── Nord/ ...
+
+*/
+
+/* install.json structure
+{
+    "Instructions": [
+        {
+            "Command": "MOVE",
+            "from": "sorce",
+            "to": "source"
+        },
+        {
+            "Command": "COPY",
+            "from": "sorce",
+            "to": "source"
+        },
+        {
+            "Command": "RENAME",
+            "Source": "Name",
+            "NewName": "NewName"
+        },
+        {
+            "Command": "EXECUTE",
+            "UseSudo": false,
+            "Source": "CommandName",
+            "Args": [
+                "1",
+                "2",
+                "3"
+            ]
+        }
+    ]
+}
+*/
+
+/* customization.json structure:
+
+{
+    "Themes": [
+        {
+            "Name": "Catppuccin",
+			"Location": "/Catppuccin",
+            "Packages": {
+                "Terminal": "/Terminals/Terminator"
+                "Shell": "/Shells/Terminator"
+                "CodeEditors": {
+                    "neovim": "/CodeEditors/NeoVim",
+                    "vscode": "null"
+                },
+                "CliTools": {
+                    "bat": "/CliTools/Bat"
+                },
+                "SystemPackages": {
+                    "DesktopEnvironment": null,
+                    "WindowManager": "DesktopEnvironment/WindowManager/i3",
+                    "DisplayManager": "DisplayManager/SDDM",
+					"Compositor": null,
+                }
+            },
+			"UserApps": {
+				"Discord": "/UserApps/Discord"
+			},
+            "Assets": {
+                "Wallpaper": "Assets/Wallpapers/WindowManager/Wallpaper01.png",
+                "LockscreenWallpaper": Assets/Wallpapers/LockScreen/Wallpaper01.png",
+                "UserProfilePicture": Assets/ProfilePictures/ProfilePicture01.png",
+                "SystemFont": null
+            }
+        }
+    ]
+}
+
+*/
+
+func cloneDotfiles() {
+	fmt.Println("Clone")
+}
+
+// Window Manger
+// Desktop Environment
+// Editors
+// Shells
+// Terminals
+// BackgroundImageViewer
+// Display Managers
+// Compositors
+
+func installCatppuccin(cfgFile string) {
+	themesDir := fmt.Sprintf("%s/Themes", helpers.GetCurrDirPath())
+	customizationLoc := fmt.Sprintf("%s/customization.json", themesDir)
+	helpers.JsonUpdater(customizationLoc, "CurrentTheme", "Catppuccin", false)
+	helpers.ClearConsole()
+	helpers.PrintHeader("User Config", "Installing Catppuccin Theme")
+	shell := helpers.JsonGetter(cfgFile, "userShell")
+	terminal := helpers.JsonGetter(cfgFile, "userTerminal")
+	DesktopEnv := helpers.JsonGetter(cfgFile, "userDesktopEnvironment")
+	WindowMan := helpers.JsonGetter(cfgFile, "userWindowManager")
+	DisplayMan := helpers.JsonGetter(cfgFile, "userDisplayManager")
+	bgViewer := helpers.JsonGetter(cfgFile, "userBackgroundImagerViewer")
+	compositor := helpers.JsonGetter(cfgFile, "userCompositor")
+	environmentSetup := helpers.JsonGetter(cfgFile, "environmentSetup")
+
+	pkgsWMSys := helpers.PrintHiYellow(fmt.Sprintf("%s, %s, %s, %s, %s, %s", shell, terminal, WindowMan, bgViewer, compositor, DisplayMan))
+	pkgsDESys := helpers.PrintHiYellow(fmt.Sprintf("%s, %s", shell, DesktopEnv))
+	if environmentSetup == "WindowManager" {
+		fmt.Printf("This will only customize the System Packages, which are: %s\n", pkgsWMSys)
+	} else {
+		fmt.Printf("This will only customize the System Packages, which are: %s\n", pkgsDESys)
+	}
+
+	// helpers.MakeDir(fmt.Sprintf("%s/Catppuccin", themesDir))
+	// helpers.CreateEmptyFile(customizationLoc)
+	// helpers.WriteToFile()
+	// parseCustomizationJSON(customizationLoc, themesDir)
+
+
+	
+}
+
+func installNord(cfgFile string) {
+	helpers.ClearConsole()
+	helpers.PrintHeader("User Config", "Installing Nord Theme")
+	themesDir := fmt.Sprintf("%s/Themes", helpers.GetCurrDirPath())
+	customizationLoc := fmt.Sprintf("%s/customization.json", themesDir)
+	helpers.JsonUpdater(customizationLoc, "CurrentTheme", "Nord", false)
+	parseCustomizationJSON(customizationLoc, themesDir)
+}
+
+func extractPathsFromPackages(packages map[string]interface{}, location string, category string, paths *[]string) {
+	if categoryPackages, ok := packages[category].(map[string]interface{}); ok {
+		for _, packagePath := range categoryPackages {
+			if packagePath != nil {
+				switch p := packagePath.(type) {
+				case string:
+					if strings.HasPrefix(p, "/") {
+						*paths = append(*paths, fmt.Sprintf("%s/%s/install.json", location, p[1:]))
+					} else {
+						*paths = append(*paths, fmt.Sprintf("%s/%s/install.json", location, p))
+					}
+				case map[string]interface{}:
+					extractPathsFromPackages(p, location, category, paths)
+				}
+			}
+		}
+	} else if packagePath, ok := packages[category].(string); ok {
+		if strings.HasPrefix(packagePath, "/") {
+			*paths = append(*paths, fmt.Sprintf("%s/%s/install.json", location, packagePath[1:]))
+		} else {
+			*paths = append(*paths, fmt.Sprintf("%s/%s/install.json", location, packagePath))
+		}
+	}
+}
+
+func extractPathsFromAssets(assets map[string]interface{}, location string, paths *[]string) {
+	for _, assetPath := range assets {
+		if assetPath != nil {
+			if strings.HasPrefix(assetPath.(string), "/") {
+				*paths = append(*paths, fmt.Sprintf("%s/%s", location, assetPath.(string)[1:]))
+			} else {
+				*paths = append(*paths, fmt.Sprintf("%s/%s", location, assetPath.(string)))
+			}
+		}
+	}
+}
+
+func parseCustomizationJSON(customizationLocation, customizationFolderLocation string) {
+	var obj map[string]interface{}
+	content, err := os.ReadFile(customizationLocation)
+	helpers.Check(err)
+	if err := json.Unmarshal(content, &obj); err != nil {
+		panic(err)
+	}
+
+	var packagesPaths []string
+	var assetsPaths []string
+	currentTheme := obj["CurrentTheme"].(string)
+	themes := obj["Themes"].([]interface{})
+	for _, theme := range themes {
+		themeMap := theme.(map[string]interface{})
+		if themeMap["Name"].(string) == currentTheme {
+			packages := themeMap["Packages"].(map[string]interface{})
+			assets := themeMap["Assets"].(map[string]interface{})
+			packageKeys := themeMap["PackagesKeys"].([]interface{})
+			location := themeMap["Location"].(string)
+			for _, v := range packageKeys {
+				extractPathsFromPackages(packages, location, v.(string), &packagesPaths)
+			}
+			extractPathsFromAssets(assets, location, &assetsPaths)
+		}
+	}
+
+	filteredPackagesPaths := make([]string, 0)
+	filteredAssetsPaths := make([]string, 0)
+
+	for _, path := range packagesPaths {
+		if !strings.Contains(path, "null") {
+			filteredPackagesPaths = append(filteredPackagesPaths, path)
+		}
+	}
+
+	for _, path := range filteredAssetsPaths {
+		if !strings.Contains(path, "null") {
+			filteredAssetsPaths = append(filteredAssetsPaths, path)
+		}
+	}
+
+	resAssets := make([]string, 0)
+	resPackages := make([]string, 0)
+
+	if len(filteredPackagesPaths) != 0 {
+		resPackages = filteredPackagesPaths
+	} else {
+		resPackages = packagesPaths
+	}
+
+	if len(filteredAssetsPaths) != 0 {
+		resAssets = filteredAssetsPaths
+	} else {
+		resAssets = assetsPaths
+	}
+
+	fmt.Println("SystemPackages:", resPackages)
+	fmt.Println("Assets:", resAssets)
+
+	for _, v := range resPackages {
+		instructionsLocationJson := fmt.Sprintf("%s%s", customizationFolderLocation, v)
+		themeFolder := fmt.Sprintf("%s/%s", customizationFolderLocation, currentTheme)
+		parserInstallJSON(instructionsLocationJson, filepath.Dir(instructionsLocationJson), themeFolder, resAssets)
+	}
+}
+
+func parsePaths(pathString string, currDir string, themeDir string) string {
+	fmt.Println(currDir)
+	fmt.Println(themeDir)
+	themeDir = fmt.Sprintf("%s/", themeDir)
+	path := pathString
+	if strings.HasPrefix(path, "%") {
+		path = strings.Replace(path, "%", themeDir, 1)
+	}
+	if strings.HasPrefix(path, "&") {
+		path = strings.Replace(path, "&", currDir, 1)
+	}
+
+	path = strings.Replace(path, "#", "../", -1)
+
+	return filepath.Clean(path)
+}
+
+func parserInstallJSON(instructionsLocationJson, instructionsLocation, themeLocation string, assetsArray []string) {
+	var instructions helpers.Instructions
+
+	content, err := os.ReadFile(instructionsLocationJson)
+	helpers.Check(err)
+	err = json.Unmarshal(content, &instructions)
+	helpers.Check(err)
+
+	for _, instruction := range instructions.Instructions {
+		switch instruction.Command {
+		case "MOVE":
+			instruction.From = parsePaths(instruction.From, instructionsLocation, themeLocation)
+			instruction.To = parsePaths(instruction.To, instructionsLocation, themeLocation)
+
+			//err := os.Rename(instruction.From, instruction.To)
+			//helpers.Check(err)
+			fmt.Println("mv", instruction.From, instruction.To)
+		case "COPYFILE":
+			instruction.From = parsePaths(instruction.From, instructionsLocation, themeLocation)
+			instruction.To = parsePaths(instruction.To, instructionsLocation, themeLocation)
+
+			//helpers.CopyFile(instruction.From, instruction.To)
+			fmt.Println("cp", instruction.From, instruction.To)
+		case "COPYDIR":
+			instruction.From = parsePaths(instruction.From, instructionsLocation, themeLocation)
+			instruction.To = parsePaths(instruction.To, instructionsLocation, themeLocation)
+
+			//helpers.CopyDir(instruction.From, instruction.To)
+			fmt.Println("cpdir", instruction.From, instruction.To)
+		case "RENAME":
+			instruction.From = parsePaths(instruction.From, instructionsLocation, themeLocation)
+			instruction.To = parsePaths(instruction.To, instructionsLocation, themeLocation)
+
+			//err := os.Rename(instruction.Source, instruction.NewName)
+			//helpers.Check(err)
+			fmt.Println("rename", instruction.From, instruction.To)
+		case "EXECUTE":
+			newArgs := []string{}
+			if instruction.CommandDirectory == "" {
+				instruction.CommandDirectory = helpers.GetPathDir(instructionsLocationJson)
+			} else {
+				instruction.From = parsePaths(instruction.From, instructionsLocation, themeLocation)
+				instruction.To = parsePaths(instruction.To, instructionsLocation, themeLocation)
+			}
+
+			for _, v := range instruction.Args {
+				newArgs = append(newArgs, parsePaths(strings.Trim(v, "\""), instructionsLocation, themeLocation))
+			}
+
+			x := append([]string{instruction.Source, instruction.CommandDirectory}, newArgs...)
+			fmt.Println("exec", instruction.UseSudo, x)
+			//if instruction.UseSudo {
+			//	helpers.SudoExecuteDir(helpers.COMMANDS_TEST_MODE, false, instruction.CommandDirectory,instruction.Source, instruction.Args...)
+			//} else {
+			//	helpers.RunShellCommandDir(helpers.COMMANDS_TEST_MODE, false, instruction.CommandDirectory, instruction.Source, instruction.Args...)
+			//}
+		case "REPLACELINE":
+			instruction.From = parsePaths(instruction.From, instructionsLocation, themeLocation)
+			instruction.To = parsePaths(instruction.To, instructionsLocation, themeLocation)
+
+			helpers.ReplaceFileLine(instruction.FileReplace, instruction.SourceLine, instruction.EditedLine)
+		case "GITCLONE":
+			instruction.GitDestination = parsePaths(instruction.GitDestination, instructionsLocation, themeLocation)
+			gitArgs := []string{"clone", instruction.GitURL, instruction.GitDestination}
+			helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "git", gitArgs...)
+		default:
+			fmt.Printf("Unknown command: %s\n", instruction.Command)
+		}
+	}
+}
+
+func createDotfiles(cfgFile string) {
+	helpers.ClearConsole()
+	helpers.PrintHeader("User Config", "Creating .dotfiles")
+	if helpers.YesNo("Would you like to create a Git repository in your $HOME with the created configurations?") {
+		helpers.JsonUpdater(cfgFile, "createDotfilesGit", true, false)
+		repoName := helpers.InputPrompt("Enter the name of the repository")
+		helpers.JsonUpdater(cfgFile, "dotfilesRepoName", repoName, false)
+	} else {
+		helpers.JsonUpdater(cfgFile, "createDotfilesGit", false, false)
+	}
+
+	helpers.ClearConsole()
+	helpers.PrintHeader("User Config", "Creating .dotfiles")
+	themeOptions := []helpers.ItemInfo{
+		{Item: "Catppuccin", Info: "A soothing pastel theme for the high-spirited! Aims to be the middle ground between low and high contrast themes."},
+		{Item: "Nord", Info: "An arctic, north-bluish color palette, with low-contrast colors."},
+	}
+	_, selectTheme := helpers.PromptSelectInfo("Select your desired theme", themeOptions)
+	switch strings.ToLower(selectTheme) {
+	case "catppuccin":
+		installCatppuccin(cfgFile)
+		helpers.JsonUpdater(cfgFile, "selectedTheme", "catppuccin", false)
+	case "nord":
+		installNord(cfgFile)
+		helpers.JsonUpdater(cfgFile, "selectedTheme", "nord", false)
+	default:
+		installCatppuccin(cfgFile)
+		helpers.JsonUpdater(cfgFile, "selectedTheme", "catppuccin", false)
+	}
+}
+
+func selectCloneOrCreate(cfgFile string) {
+	helpers.ClearConsole()
+	helpers.PrintHeader("User Config", "Cloning .dotfiles")
+	if helpers.IsCommandAvailable("git") {
+		fmt.Println(helpers.PrintHiYellow("NOTE: This repo needs to follow the folder structure specified in the script repository."))
+		if helpers.YesNo("Would you like to clone a existing dotfiles repository and use it's files?") {
+			cloneDotfiles()
+		} else {
+			createDotfiles(cfgFile)
+		}
+	} else {
+		if helpers.YesNo(fmt.Sprintf("%s is not installed, would you like to install it?", helpers.PrintHiYellow("git"))) {
+			//helpers.PacmanInstallPackages("git")
+			selectCloneOrCreate(cfgFile)
+		} else {
+			createDotfiles(cfgFile)
+		}
+	}
+
+}
+
+func UserConfig() {
+	var CONFIG_DIR string = fmt.Sprintf("%s/config", helpers.GetCurrDirPath())
+	var CONFIG_FILE string = fmt.Sprintf("%s/config.json", CONFIG_DIR)
+	helpers.ClearConsole()
+	helpers.PrintHeader("User Config", "Setting Configs")
+	fmt.Printf("%s %s %s\n", helpers.PrintHiYellow("Selecting"), helpers.PrintHiRed("\"NO\""), helpers.PrintHiYellow("will skip this step and leave you in a default Arch Linux installation with the proper services enabled for you to customize in your own."))
+	fmt.Printf("%s %s %s\n", helpers.PrintHiYellow("But selecting"), helpers.PrintHiGreen("\"YES\""), helpers.PrintHiYellow("will ask for a Git repository, and if you don't have one, will guide you through the customization of a pre-defined theme."))
+
+	if helpers.YesNo("Would you like to automatic rice using the script?") {
+		selectCloneOrCreate(CONFIG_FILE)
+	} else {
+		return
+	}
+}

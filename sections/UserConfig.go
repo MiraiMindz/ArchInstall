@@ -2,9 +2,7 @@ package sections
 
 import (
 	"ArchInstall/helpers"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 
 	//"os"
 	"strings"
@@ -191,148 +189,27 @@ func cloneDotfiles() {
 	fmt.Println("Clone")
 }
 
-func installCatppuccin() {
+// Window Manger
+// Desktop Environment
+// Editors
+// Shells
+// Terminals
+// BackgroundImageViewer
+// Display Managers
+// Compositors
+
+
+
+func installCatppuccin(cfgFile string) {
 	helpers.ClearConsole()
 	helpers.PrintHeader("User Config", "Installing Catppuccin Theme")
-	parseCustomizationJSON(fmt.Sprintf("%s/Themes/customization.json", helpers.GetCurrDirPath()))
-
-	// b, err := json.Marshal(user)
-	// if err != nil {
-	//     fmt.Println(err)
-	//     return
-	// }
-	// fmt.Println(string(b))
 }
 
-func installNord() {
+func installNord(cfgFile string) {
 	helpers.ClearConsole()
 	helpers.PrintHeader("User Config", "Installing Nord Theme")
 }
 
-func extractPathsFromPackages(packages map[string]interface{}, location string, category string, paths *[]string) {
-	if categoryPackages, ok := packages[category].(map[string]interface{}); ok {
-		for _, packagePath := range categoryPackages {
-			if packagePath != nil {
-				*paths = append(*paths, fmt.Sprintf("%s/%s/install.json", location, packagePath.(string)))
-			}
-		}
-	}
-}
-
-func extractPathsFromAssets(assets map[string]interface{}, location string, paths *[]string) {
-	for _, assetPath := range assets {
-		if assetPath != nil {
-			*paths = append(*paths, fmt.Sprintf("%s/%s", location, assetPath.(string)))
-		}
-	}
-}
-
-func parseCustomizationJSON(customizationLocation string) {
-	var obj map[string]interface{}
-	content, err := ioutil.ReadFile(customizationLocation)
-	helpers.Check(err)
-	if err := json.Unmarshal(content, &obj); err != nil {
-		panic(err)
-	}
-
-	var packagesPaths []string
-	var assetsPaths []string
-	themes := obj["Themes"].([]interface{})
-	for _, theme := range themes {
-		themeMap := theme.(map[string]interface{})
-		packages := themeMap["Packages"].(map[string]interface{})
-		assets := themeMap["Assets"].(map[string]interface{})
-		location := themeMap["Location"].(string)
-		extractPathsFromPackages(packages, location, "SystemPackages", &packagesPaths)
-		extractPathsFromPackages(packages, location, "CodeEditors", &packagesPaths)
-		extractPathsFromPackages(packages, location, "CliTools", &packagesPaths)
-		extractPathsFromPackages(packages, location, "UserApps", &packagesPaths)
-		extractPathsFromPackages(packages, location, "OtherApps", &packagesPaths)
-		extractPathsFromAssets(assets, location, &assetsPaths)
-	}
-
-	filteredPackagesPaths := make([]string, 0)
-	filteredAssetsPaths := make([]string, 0)
-
-	for _, path := range packagesPaths {
-		if !strings.Contains(path, "null/") {
-			filteredPackagesPaths = append(filteredPackagesPaths, path)
-		}
-	}
-
-	for _, path := range filteredAssetsPaths {
-		if !strings.Contains(path, "null/") {
-			filteredAssetsPaths = append(filteredAssetsPaths, path)
-		}
-	}
-
-	resAssets := make([]string, 0)
-	resPackages := make([]string, 0)
-
-	if len(filteredPackagesPaths) != 0 {
-		resPackages = filteredPackagesPaths
-	} else {
-		resPackages = packagesPaths
-	}
-
-	if len(filteredAssetsPaths) != 0 {
-		resAssets = filteredAssetsPaths
-	} else {
-		resAssets = assetsPaths
-	}
-
-	fmt.Println("SystemPackages:", resPackages)
-	fmt.Println("Assets:", resAssets)
-
-	for _, v := range resPackages {
-		parserInstallJSON(v)
-	}
-}
-
-func parserInstallJSON(instructionsLocation string) {
-	var instructions helpers.Instructions
-
-	fmt.Println(instructionsLocation)
-
-	content, err := ioutil.ReadFile(instructionsLocation)
-	helpers.Check(err)
-	err = json.Unmarshal(content, &instructions)
-	helpers.Check(err)
-
-	for _, instruction := range instructions.Instructions {
-		switch instruction.Command {
-		case "MOVE":
-			//err := os.Rename(instruction.From, instruction.To)
-			//helpers.Check(err)
-			fmt.Println("mv", instruction.From, instruction.To)
-		case "COPYFILE":
-			//helpers.CopyFile(instruction.From, instruction.To)
-			fmt.Println("cp", instruction.From, instruction.To)
-		case "COPYDIR":
-			//helpers.CopyDir(instruction.From, instruction.To)
-			fmt.Println("cpdir", instruction.From, instruction.To)
-		case "RENAME":
-			//err := os.Rename(instruction.Source, instruction.NewName)
-			//helpers.Check(err)
-			fmt.Println("rename", instruction.From, instruction.To)
-		case "EXECUTE":
-			x := append([]string{instruction.Source}, instruction.Args...)
-			fmt.Println("exec", instruction.UseSudo, x)
-			//if instruction.UseSudo {
-			//	helpers.SudoExecuteDir(helpers.COMMANDS_TEST_MODE, false, instruction.CommandDirectory,instruction.Source, instruction.Args...)
-			//} else {
-			//	helpers.RunShellCommandDir(helpers.COMMANDS_TEST_MODE, false, instruction.CommandDirectory, instruction.Source, instruction.Args...)
-			//}
-		case "REPLACELINE":
-			helpers.ReplaceFileLine(instruction.FileReplace, instruction.SourceLine, instruction.EditedLine)
-		case "GITCLONE":
-			gitArgs := []string{"clone", instruction.GitURL, instruction.GitDestination}
-			helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "git", gitArgs...)
-		default:
-			fmt.Printf("Unknown command: %s\n", instruction.Command)
-		}
-	}
-}
 
 func createDotfiles(cfgFile string) {
 	helpers.ClearConsole()
@@ -348,19 +225,19 @@ func createDotfiles(cfgFile string) {
 	helpers.ClearConsole()
 	helpers.PrintHeader("User Config", "Creating .dotfiles")
 	themeOptions := []helpers.ItemInfo{
-		{Item: "Catppuccin", Info: "A soothing pastel theme for the high-spirited! Catppuccin is a community-driven pastel theme that aims to be the middle ground between low and high contrast themes."},
+		{Item: "Catppuccin", Info: "A soothing pastel theme for the high-spirited! Aims to be the middle ground between low and high contrast themes."},
 		{Item: "Nord", Info: "An arctic, north-bluish color palette, with low-contrast colors."},
 	}
 	_, selectTheme := helpers.PromptSelectInfo("Select your desired theme", themeOptions)
 	switch strings.ToLower(selectTheme) {
 	case "catppuccin":
-		installCatppuccin()
+		installCatppuccin(cfgFile)
 		helpers.JsonUpdater(cfgFile, "selectedTheme", "catppuccin", false)
 	case "nord":
-		installNord()
+		installNord(cfgFile)
 		helpers.JsonUpdater(cfgFile, "selectedTheme", "nord", false)
 	default:
-		installCatppuccin()
+		installCatppuccin(cfgFile)
 		helpers.JsonUpdater(cfgFile, "selectedTheme", "catppuccin", false)
 	}
 }
@@ -393,6 +270,7 @@ func UserConfig() {
 	helpers.PrintHeader("User Config", "Setting Configs")
 	fmt.Printf("%s %s %s\n", helpers.PrintHiYellow("Selecting"), helpers.PrintHiRed("\"NO\""), helpers.PrintHiYellow("will skip this step and leave you in a default Arch Linux installation with the proper services enabled for you to customize in your own."))
 	fmt.Printf("%s %s %s\n", helpers.PrintHiYellow("But selecting"), helpers.PrintHiGreen("\"YES\""), helpers.PrintHiYellow("will ask for a Git repository, and if you don't have one, will guide you through the customization of a pre-defined theme."))
+
 	if helpers.YesNo("Would you like to automatic rice using the script?") {
 		selectCloneOrCreate(CONFIG_FILE)
 	} else {

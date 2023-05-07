@@ -179,6 +179,7 @@ func _selectDE(cfgFile string) {
 			pkgName = "xfce4"
 		}
 		helpers.JsonUpdater(cfgFile, "basePackages", pkgName, false)
+		helpers.JsonUpdater(cfgFile, "userDesktopEnvironment", pkgName, false)
 		_selectShell(cfgFile)
 	}
 }
@@ -246,6 +247,7 @@ func _selectStackWM(cfgFile string) {
 			pkgName = "xfwm4"
 		}
 		helpers.JsonUpdater(cfgFile, "basePackages", pkgName, false)
+		helpers.JsonUpdater(cfgFile, "userWindowManager", pkgName, false)
 		_selectBgImageViewer(cfgFile)
 		_selectShell(cfgFile)
 		_selectTerminal(cfgFile)
@@ -279,7 +281,7 @@ func _selectTilingWM(cfgFile string) {
 		case "herbstluftwm":
 			pkgName = "herbstluftwm"
 		case "i3":
-			pkgName = "i3-wm|terminator"
+			pkgName = "i3-wm"
 		case "notion":
 			pkgName = "notion"
 		case "ratpoison":
@@ -289,6 +291,8 @@ func _selectTilingWM(cfgFile string) {
 		}
 
 		helpers.JsonUpdater(cfgFile, "basePackages", pkgName, false)
+		helpers.JsonUpdater(cfgFile, "basePackages", "|terminator", false)
+		helpers.JsonUpdater(cfgFile, "userWindowManager", pkgName, false)
 		_selectBgImageViewer(cfgFile)
 		_selectShell(cfgFile)
 		_selectTerminal(cfgFile)
@@ -325,6 +329,7 @@ func _selectDynamicWM(cfgFile string) {
 			pkgName = "xmonad"
 		}
 		helpers.JsonUpdater(cfgFile, "basePackages", pkgName, false)
+		helpers.JsonUpdater(cfgFile, "userWindowManager", pkgName, false)
 		_selectBgImageViewer(cfgFile)
 		_selectShell(cfgFile)
 		_selectTerminal(cfgFile)
@@ -1098,8 +1103,10 @@ func _environmentSetup(cfgFile string) {
 	_, retEnv := helpers.PromptSelectInfo("You want a Desktop Environment or Window Manager setup?", envOpts)
 	switch strings.ToLower(retEnv) {
 	case "desktop environment":
+		helpers.JsonUpdater(cfgFile, "environmentSetup", "DesktopEnvironment", false)
 		_selectDE(cfgFile)
 	case "window manager":
+		helpers.JsonUpdater(cfgFile, "environmentSetup", "WindowManager", false)
 		_selectWM(cfgFile)
 	default:
 		fmt.Println(helpers.PrintError("WRONG ENVIRONMENT SELECTION."))
@@ -1191,9 +1198,11 @@ func installBaseSystem(cfgFile string) {
 			fmt.Println(helpers.PrintHiBlack(baseDefaultPackages))
 			pkgsToRemove := helpers.PromptMultiSelect("Select the packages to remove", basePackages)
 			finalPkgs := helpers.DifferenceBetweenSlices(basePackages, pkgsToRemove)
-			helpers.PacmanInstallPackages(finalPkgs...)
+			cleanPkgs := helpers.RemoveDuplicateStr(finalPkgs)
+			helpers.PacmanInstallPackages(cleanPkgs...)
 		} else {
-			helpers.PacmanInstallPackages(basePackages...)
+			cleanPkgs := helpers.RemoveDuplicateStr(basePackages)
+			helpers.PacmanInstallPackages(cleanPkgs...)
 		}
 	}
 }

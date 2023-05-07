@@ -6,7 +6,8 @@ type ItemInfo struct {
 }
 
 type CustomizationStruct struct {
-	Themes []Themes `json:"Themes,omitempty"`
+	CurrentTheme string   `json:"CurrentTheme,omitempty"`
+	Themes       []Themes `json:"Themes,omitempty"`
 }
 
 type Themes struct {
@@ -33,6 +34,7 @@ type Instruction struct {
 	GitURL           string   `json:"GitURL,omitempty"`
 	GitDestination   string   `json:"GitDestination,omitempty"`
 	CommandDirectory string   `json:"CommandDirectory,omitempty"`
+	UseAssets        []uint   `json:"UseAssets,omitempty"`
 	Args             []string `json:"Args,omitempty"`
 }
 

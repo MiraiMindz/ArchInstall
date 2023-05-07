@@ -11,7 +11,7 @@ This script aims to fully automate the hard-labour of typing a lot of commands w
 - Server (Is self-explanatory)
 - Removable Medium (Install Arch on a removable medium like a USB stick and make the proper configurations)
 
-## Notes
+<!-- ## Notes
 
 As of easy-of-use, the current script uses a JSON file to stores any temporary variable, and this file is shredded and deleted at the final of the installation, that being said, any information is stored in *plain text*.
 
@@ -151,55 +151,225 @@ I thought about hashing those infos (like passwords), but it will require the us
 
 ### List of Available Commands:
 
+Notes:
+
+If any of those paths starts with a `&` (Ampersand) it will replace the symbol with the current path (The path of the `install.json` file), otherwise it needs to be an absolute path.
+
+If it starts with a `%` (percentage-sign) it will use the Theme root location (the one specified in the `Location` attribute inside of the `customization.json`)
+
+The `#` means `parent-directory`, It needs to be at the beginning, you can have any `#` as you want, all of then will be treated at a separated parent.
+
+so using `##/file.ext` will mean `Go up 2 parent directories to access file.ext`, or the Shell equivalent of `../../file.ext`
+
+The `PathVars` attribute is a list of variables that will be expanded in any path.
+
+The `UseAssets` is a list of indexes referents to the `Assets` element in the `customization.json`, it is already filled with the Theme absolute path.
+
+The indexes starts at `0`, so if you want to use the second and the fourth item, you need to put `[1, 3]` in the array.
+
+To use the selected assets, you need to specify a `$` (dollar sign) with the index of the element in the `UseAssets` array (it starts at `0`) too.
+
+So in the following example:
+
+```json
+"CurrentTheme": "Catppuccin",
+    "Themes": [
+        {
+            "Name": "Catppuccin",
+            "Location": "/Catppuccin",
+            "Assets": {
+                "Wallpaper": "/Assets/Wallpapers/WindowManager/Wallpaper01.png",
+                "LockscreenWallpaper": "/Assets/Wallpapers/LockScreen/Wallpaper01.png",
+                "UserProfilePicture": "/Assets/ProfilePictures/ProfilePicture01.png",
+                "Photo01": "/Assets/Photos/001.jpg",
+                "SystemFont": null
+            }
+        }
+    ]
+```
+
+```json
+{
+    "Command": "MOVE",
+    "UseAssets": [1, 3],
+    "From": "$1",
+    "To": "%/OtherDirectory/"
+}
+```
+
+It will use the second and the fourth Assets of the given theme, and will move the fourth element into a new location.
+
+*This is because, the `$1`, is referent to the SECOND item in `UseAssets`, if we wanted the first item in `UseAssets`, we simply put `$0` instead of `$1`.*
+
+*And the second item in `UserAssets` is the fourth item in the `Assets` map of the theme, and the first item is the second element in that map.*
+
+Assuming that the Theme is on my $HOME directory, the above example will result in the following command:
+
+```sh
+mv /home/mirai/Themes/Catppuccin/Assets/Photos/001.jpg /home/mirai/Themes/Catppuccin/OtherDirectory/
+```
+
 - `MOVE`:
+    - Moves a file from `From` to `To`.
     - ARGS:
         - `From`: The source to move from.
         - `To`: The destination.
+    - EXAMPLES:
+        - ```json
+            {
+                "Command": "MOVE",
+                "UseAssets": [1, 3],
+                "From": "$1",
+                "To": "%/OtherDirectory/"
+            }
+            ```
+        - ```json
+            {
+                "Command": "MOVE",
+                "From": "/home/mirai/ConfigDir/config.conf",
+                "To": "/home/mirai/config.conf"
+            }
+            ```
 - `COPYFILE`:
+    - Copy a file from `From` to `To`, if any of those starts with a `&` (Ampersand) it will replace the symbol with the current path (The path of the `install.json` file), otherwise all paths must be absolute.
     - ARGS:
         - `From`: The source to copy from.
         - `To`: The destination.
+    - EXAMPLES:
+        - ```json
+            {
+                "Command": "MOVE",
+                "From": "%/ConfigDir/config.conf",
+                "To": "%/config.conf"
+            }
+            ```
+        - ```json
+            {
+                "Command": "MOVE",
+                "From": "/home/mirai/ConfigDir/config.conf",
+                "To": "/home/mirai/config.conf"
+            }
+            ```
 - `COPYDIR`:
+    - Copies a directory and it's contents from `From` to `To`, if any of those starts with a `&` (Ampersand) it will replace the symbol with the current path (The path of the `install.json` file), (You can specify only the parent dir if you want to.), otherwise all paths must be absolute.
     - ARGS:
         - `From`: The source to copy from.
         - `To`: The destination.
+    - EXAMPLES:
+        - ```json
+            {
+                "Command": "MOVE",
+                "From": "%/ConfigDir/config.conf",
+                "To": "%/config.conf"
+            }
+            ```
+        - ```json
+            {
+                "Command": "MOVE",
+                "From": "/home/mirai/ConfigDir/config.conf",
+                "To": "/home/mirai/config.conf"
+            }
+            ```
 - `RENAME`:
     - ARGS:
         - `Source`: The source name.
         - `NewName`: The source new name.
+    - EXAMPLES:
+        - ```json
+            {
+                "Command": "MOVE",
+                "From": "%/ConfigDir/config.conf",
+                "To": "%/config.conf"
+            }
+            ```
+        - ```json
+            {
+                "Command": "MOVE",
+                "From": "/home/mirai/ConfigDir/config.conf",
+                "To": "/home/mirai/config.conf"
+            }
+            ```
 - `EXECUTE`:
     - ARGS:
         - `UseSudo`: Tell the parser to use Root privileges.
-        - `CommandDirectory`: The directory to run the command.
+        - `CommandDirectory`: The directory to run the command (Defaults to the `install.json` directory).
         - `Source`: The Command itself.
         - `Args`: The list of argumets for the command.
+    - EXAMPLES:
+        - ```json
+            {
+                "Command": "MOVE",
+                "From": "%/ConfigDir/config.conf",
+                "To": "%/config.conf"
+            }
+            ```
+        - ```json
+            {
+                "Command": "MOVE",
+                "From": "/home/mirai/ConfigDir/config.conf",
+                "To": "/home/mirai/config.conf"
+            }
+            ```
 - `REPLACELINE`:
     - ARGS:
         - `FileReplace`: The file to replace the line.
         - `SourceLine`: The line to replace.
         - `EditedLine`: The new content.
+    - EXAMPLES:
+        - ```json
+            {
+                "Command": "MOVE",
+                "From": "%/ConfigDir/config.conf",
+                "To": "%/config.conf"
+            }
+            ```
+        - ```json
+            {
+                "Command": "MOVE",
+                "From": "/home/mirai/ConfigDir/config.conf",
+                "To": "/home/mirai/config.conf"
+            }
+            ```
 - `GITCLONE`:
     - ARGS:
         - `GitURL`: URL of the Git repository.
         - `GitDestination`: The destination of the Git repository.
+    - EXAMPLES:
+        - ```json
+            {
+                "Command": "MOVE",
+                "From": "%/ConfigDir/config.conf",
+                "To": "%/config.conf"
+            }
+            ```
+        - ```json
+            {
+                "Command": "MOVE",
+                "From": "/home/mirai/ConfigDir/config.conf",
+                "To": "/home/mirai/config.conf"
+            }
+            ```
 
 ## `customization.json` Example Structure
 
 ```json
 {
+    "CurrentTheme": "Catppuccin",
     "Themes": [
         {
             "Name": "Catppuccin",
             "Location": "/Catppuccin",
+            "PackagesKeys": [
+                "Terminals",
+                "Shells",
+                "CodeEditors",
+                "CliTools",
+                "SystemPackages",
+                "UserApps"
+            ], 
             "Packages": {
-                "SystemPackages": {
-                    "Terminal": "/Terminals/Terminator",
-                    "Shell": "/Shells/Terminator",
-                    "DesktopEnvironment": null,
-                    "WindowManager": "DesktopEnvironment/WindowManager/i3",
-                    "DisplayManager": "DisplayManager/SDDM",
-                    "Compositor": null
-                },
+                "Terminals": "/Terminals/Terminator",
+                "Shells": "/Shells/ZSH",
                 "CodeEditors": {
                     "neovim": "/CodeEditors/NeoVim",
                     "vscode": "null"
@@ -207,32 +377,38 @@ I thought about hashing those infos (like passwords), but it will require the us
                 "CliTools": {
                     "bat": "/CliTools/Bat"
                 },
+                "SystemPackages": {
+                    "DesktopEnvironment": null,
+                    "WindowManager": "/DesktopEnvironment/WindowManager/i3",
+                    "DisplayManager": "/DisplayManager/SDDM",
+                    "Compositor": null
+                },
                 "UserApps": {
                     "Discord": "/UserApps/Discord"
-                },
-                "OtherApps": {
-                    "": ""
                 }
             },
             "Assets": {
-                "Wallpaper": "Assets/Wallpapers/WindowManager/Wallpaper01.png",
-                "LockscreenWallpaper": "Assets/Wallpapers/LockScreen/Wallpaper01.png",
-                "UserProfilePicture": "Assets/ProfilePictures/ProfilePicture01.png",
+                "Wallpaper": "/Assets/Wallpapers/WindowManager/Wallpaper01.png",
+                "LockscreenWallpaper": "/Assets/Wallpapers/LockScreen/Wallpaper01.png",
+                "UserProfilePicture": "/Assets/ProfilePictures/ProfilePicture01.png",
+                "Photo01": "/Assets/Photos/001.jpg",
                 "SystemFont": null
             }
         },
         {
             "Name": "Nord",
             "Location": "/Nord",
+            "PackagesKeys": [
+                "Terminals",
+                "Shells",
+                "CodeEditors",
+                "CliTools",
+                "SystemPackages",
+                "UserApps"
+            ], 
             "Packages": {
-                "SystemPackages": {
-                    "Terminal": "/Terminals/Terminator",
-                    "Shell": "/Shells/Terminator",
-                    "DesktopEnvironment": null,
-                    "WindowManager": "DesktopEnvironment/WindowManager/i3",
-                    "DisplayManager": "DisplayManager/SDDM",
-                    "Compositor": null
-                },
+                "Terminals": "/Terminals/Terminator",
+                "Shells": "/Shells/ZSH",
                 "CodeEditors": {
                     "neovim": "/CodeEditors/NeoVim",
                     "vscode": "null"
@@ -240,20 +416,23 @@ I thought about hashing those infos (like passwords), but it will require the us
                 "CliTools": {
                     "bat": "/CliTools/Bat"
                 },
+                "SystemPackages": {
+                    "DesktopEnvironment": null,
+                    "WindowManager": "/DesktopEnvironment/WindowManager/i3",
+                    "DisplayManager": "/DisplayManager/SDDM",
+                    "Compositor": null
+                },
                 "UserApps": {
                     "Discord": "/UserApps/Discord"
-                },
-                "OtherApps": {
-                    "": ""
                 }
             },
             "Assets": {
-                "Wallpaper": "Assets/Wallpapers/WindowManager/Wallpaper01.png",
-                "LockscreenWallpaper": "Assets/Wallpapers/LockScreen/Wallpaper01.png",
-                "UserProfilePicture": "Assets/ProfilePictures/ProfilePicture01.png",
+                "Wallpaper": "/Assets/Wallpapers/WindowManager/Wallpaper01.png",
+                "LockscreenWallpaper": "/Assets/Wallpapers/LockScreen/Wallpaper01.png",
+                "UserProfilePicture": "/Assets/ProfilePictures/ProfilePicture01.png",
                 "SystemFont": null
             }
         }
     ]
 }
-```
+``` -->

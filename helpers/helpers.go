@@ -928,3 +928,23 @@ func GetKeysWithParents(m map[string]interface{}, parentKeys []string) map[strin
 	}
 	return result
 }
+
+func GetPathDir(filePath string) string {
+	return filepath.Dir(filePath)
+}
+
+func RemoveDuplicateStr(strSlice []string) []string {
+	allKeys := make(map[string]bool)
+	list := []string{}
+	for _, item := range strSlice {
+		if _, value := allKeys[item]; !value {
+			allKeys[item] = true
+			list = append(list, item)
+		}
+	}
+	return list
+}
+
+func MakeDir(dirPath string) {
+	os.MkdirAll(dirPath, 0644)
+}
