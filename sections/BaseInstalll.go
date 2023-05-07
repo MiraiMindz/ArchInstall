@@ -41,16 +41,16 @@ func setNetworkConnection() {
 }
 
 func setPacman(cfgFile string) {
-	//parallelDowns := helpers.JsonGetter(cfgFile, "pacmanParallelDownloads")
+	parallelDowns := helpers.JsonGetter(cfgFile, "pacmanParallelDownloads")
 	helpers.ClearConsole()
 	helpers.PrintHeader("Base Install", "Pacman Mirrors")
-	//helpers.CopyFile("/etc/pacman.d/mirrorlist", "/etc/pacman.d/mirrorlist.bak")
-	//helpers.ReplaceFileLine("/etc/pacman.conf", "#ParallelDownloads", fmt.Sprintf("ParallelDownloads = %s", parallelDowns))
-	//helpers.ReplaceFileLine("/etc/pacman.conf", "#Color", "Color")
-	//helpers.ReplaceFileLine("/etc/pacman.conf", "#CheckSpace", "CheckSpace")
-	//helpers.ReplaceFileLine("/etc/pacman.conf", "#VerbosePkgLists", "VerbosePkgLists")
-	//helpers.ReplaceFileLine("/etc/pacman.conf", "#[community]", "[community]")
-	//helpers.ReplaceFileLine("/etc/pacman.conf", "#[multilib]", "[multilib]")
+	helpers.CopyFile("/etc/pacman.d/mirrorlist", "/etc/pacman.d/mirrorlist.bak")
+	helpers.ReplaceFileLine("/etc/pacman.conf", "#ParallelDownloads", fmt.Sprintf("ParallelDownloads = %s", parallelDowns))
+	helpers.ReplaceFileLine("/etc/pacman.conf", "#Color", "Color")
+	helpers.ReplaceFileLine("/etc/pacman.conf", "#CheckSpace", "CheckSpace")
+	helpers.ReplaceFileLine("/etc/pacman.conf", "#VerbosePkgLists", "VerbosePkgLists")
+	helpers.ReplaceFileLine("/etc/pacman.conf", "#[community]", "[community]")
+	helpers.ReplaceFileLine("/etc/pacman.conf", "#[multilib]", "[multilib]")
 	helpers.RunShellCommand(helpers.COMMANDS_TEST_MODE, false, "pacman", "-Sy", "--noconfirm", "--needed")
 	helpers.PacmanInstallPackages("pacman-contrib", "curl", "reflector", "grub", "git")
 }
@@ -118,7 +118,7 @@ func installHelper(cfgFile string) {
 	case "none":
 		return
 	default:
-		//helpers.InstallAurPkgWithoutHelper(pkgHelper)
+		helpers.InstallAurPkgWithoutHelper(pkgHelper)
 	}
 }
 
@@ -1213,8 +1213,8 @@ func setLocaleTimezone(cfgFile string) {
 	// /etc/locale.gen
 	helpers.ClearConsole()
 	helpers.PrintHeader("Base Install", "Locale / TimeZone")
-	//localeFile := "/etc/locale.gen"
-	localeFile := fmt.Sprintf("%s/locales.txt", helpers.GetCurrDirPath())
+	localeFile := "/etc/locale.gen"
+	//localeFile := fmt.Sprintf("%s/locales.txt", helpers.GetCurrDirPath())
 	keyboardLayout := helpers.JsonGetter(cfgFile, "keyboardLayout")
 	timeZone := helpers.JsonGetter(cfgFile, "timeZone")
 
@@ -1255,8 +1255,8 @@ func setHostsFiles(cfgFile string) {
 	helpers.ClearConsole()
 	helpers.PrintHeader("Base Install", "Hosts Files")
 	var socialHosts, gamblingHosts, pornHosts, fakeNewsHosts bool
-	hostsLock := fmt.Sprintf("%s/hosts.txt", helpers.GetCurrDirPath())
-	//hostsLock := "/etc/hosts"
+	//hostsLock := fmt.Sprintf("%s/hosts.txt", helpers.GetCurrDirPath())
+	hostsLock := "/etc/hosts"
 	hostsOptions := []string{
 		"Gambling",
 		"Porn",
@@ -1391,8 +1391,8 @@ func setHostName(cfgFile string) {
 	helpers.ClearConsole()
 	helpers.PrintHeader("Base Install", "Hostname")
 	hostName := helpers.JsonGetter(cfgFile, "hostName")
-	hostNameLocation := fmt.Sprintf("%s/hostname.txt", helpers.GetCurrDirPath())
-	// hostNameLocation := "/etc/hostname"
+	// hostNameLocation := fmt.Sprintf("%s/hostname.txt", helpers.GetCurrDirPath())
+	hostNameLocation := "/etc/hostname"
 	helpers.WriteToFile(hostNameLocation, hostName, 0644)
 }
 

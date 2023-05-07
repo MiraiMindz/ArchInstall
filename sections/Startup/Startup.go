@@ -1,4 +1,11 @@
-package main
+package sections
+
+/*******************************************************************************
+THIS  FILE  ONLY EXISTS  FOR TESTING, THE  CORRECT FILE IS LOCATED AT ./Startup/
+THIS  WAS  DONE  BECAUSE I WOULD  NEED TO  ALL PARTS AS  STANDALONE  BINARIES TO
+EXECUTE  IN THE MAIN SCRIPT  ON THE INSTALLATION PROCESS, AND  TO DO THAT I NEED
+TO CREATE ANOTHER MODULE. THEY ARE IDENTICAL BTW. - MIRAI
+*******************************************************************************/
 
 import (
 	"ArchInstall/helpers"
@@ -10,8 +17,6 @@ import (
 
 	"github.com/jaypipes/ghw"
 )
-
-const sectionName string = "Startup"
 
 func createConfigFile(filePath string) {
 	file_loc := fmt.Sprintf("%s/config.json", filePath)
@@ -84,9 +89,7 @@ func setTimeZone() string {
 func keyboardLayout() string {
 	var returnValue string
 	var keyLists []string
-	for _, file := range helpers.FindFiles("/usr/share/kbd/keymaps", ".gz", ".map.gz", true) {
-		keyLists = append(keyLists, file)
-	}
+	keyLists = append(keyLists, helpers.FindFiles("/usr/share/kbd/keymaps", ".gz", ".map.gz", true)...)
 	helpers.ClearConsole()
 	helpers.PrintHeader("Startup", "Keyboard Layout")
 
@@ -135,10 +138,10 @@ func setDiskVars() (string, uint64) {
 		}
 	}
 	fmt.Printf("%s: /dev/%s (%s) - %s\n",
-				selectedDisk.DriveType.String(),
-				selectedDisk.Name,
-				helpers.ByteSizeConverter(selectedDisk.SizeBytes),
-				selectedDisk.Model)
+		selectedDisk.DriveType.String(),
+		selectedDisk.Name,
+		helpers.ByteSizeConverter(selectedDisk.SizeBytes),
+		selectedDisk.Model)
 
 	if helpers.YesNo("Is this correct?") {
 		fmt.Printf("Selected device: /dev/%s\n", selectedDisk.Name)
@@ -170,7 +173,6 @@ func _askUserName() string {
 
 	return usrNm
 }
-
 
 func _askHostName() string {
 	hstNm := _readName("Enter your hostname")
@@ -224,17 +226,31 @@ func rootPasswd() string {
 	return passwd1
 }
 
+func selectInstallationType() string {
+	helpers.ClearConsole()
+	helpers.PrintHeader("Startup", "Installation Type")
+	installTypes := []string{
+		"PC",
+		"Server",
+		"Removable Medium",
+	}
+
+	_, selectedType := helpers.PromptSelect("Select your type of installation", installTypes)
+
+	return selectedType
+}
+
 func aurHelper() string {
 	helpers.ClearConsole()
 	helpers.PrintHeader("Startup", "AUR Helpers")
 
-	var aurHelpersList = []string{"aura", "nix", "pacaur", "paru", "picaur", "trizen", "yay", "none"}
-	fmt.Println("select \"none\" if you don't want any or \"nix\" to use the Nix Package Manager.")
+	var aurHelpersList = []string{"aura", "nix", "pacaur", "paru", "picaur", "pikaur", "trizen", "yay", "none"}
+	fmt.Println("select \"none\" if you don't want any or select \"nix\" to use the Nix Package Manager.")
 	_, answer := helpers.PromptSelect("Select your AUR Helper", aurHelpersList)
 	return answer
 }
 
-func main() {
+func Startupp() {
 	var CONFIG_DIR string = fmt.Sprintf("%s/config", helpers.GetCurrDirPath())
 
 	if helpers.YesNo("Run checks?") {
@@ -245,6 +261,9 @@ func main() {
 	var CONFIG_FILE string = fmt.Sprintf("%s/config.json", CONFIG_DIR)
 
 	helpers.JsonUpdater(CONFIG_FILE, "installLocation", helpers.GetCurrDirPath(), false)
+
+	selectedInstallType := selectInstallationType()
+	helpers.JsonUpdater(CONFIG_FILE, "installType", selectedInstallType, false)
 
 	keyLayout := keyboardLayout()
 	helpers.JsonUpdater(CONFIG_FILE, "keyboardLayout", keyLayout, false)
