@@ -1,3 +1,5 @@
+package main
+
 /*******************************************************************************
 Notes:
 Create a common config file to store common variables for the script files.
@@ -76,96 +78,48 @@ Rice System Steps:
 	[ ] -
 *******************************************************************************/
 
-package main
-
-// import (
-// 	"fmt"
-// 	"os"
-// 	"os/exec"
-// 	utils "utils/components"
-
-// 	"github.com/charmbracelet/bubbles/list"
-// 	tea "github.com/charmbracelet/bubbletea"
-// )
-
-// // Automates the process of running shell commands
-// func RunShellCommand(testMode, returnOutput bool, name string, args ...string) string {
-// 	if testMode {
-// 		x := []string{name}
-// 		x = append(x, args...)
-// 		fmt.Println(x)
-// 		return ""
-// 	} else {
-// 		cmd := exec.Command(name, args...)
-// 		cmd.Stdin = os.Stdin
-// 		if returnOutput {
-// 			out, err := cmd.Output()
-// 			Check(err)
-// 			return string(out)
-// 		} else {
-// 			cmd.Stdout = os.Stdout
-// 			cmd.Run()
-// 			return ""
-// 		}
-// 	}
-// }
-
-// // Checks a error and panics
-// func Check(e error) {
-// 	if e != nil {
-// 		panic(e)
-// 	}
-// }
-
-// func main() {
-// 	itemsCount := 64
-// 	opts := make([]list.Item, itemsCount)
-// 	text := "item"
-
-// 	for i := 0; i < itemsCount; i++ {
-// 		item := utils.MenuItem{
-// 			TitleField: fmt.Sprintf("%s %d", text, i),
-// 			Desc:       fmt.Sprintf("desc %s %d", text, i),
-// 		}
-// 		opts[i] = item
-// 	}
-
-// 	submitFunction := func(args ...interface{}) []interface{} {
-// 		model := args[0].(utils.MenuElement)
-// 		RunShellCommand(false, false, "touch", model.Choice.TitleField)
-// 		return nil
-// 	}
-
-// 	p := tea.NewProgram(utils.SelectMenu("Test", submitFunction, opts), tea.WithAltScreen())
-// 	m, err := p.Run()
-// 	if err != nil {
-// 		panic(err)
-// 	}
-
-// 	nullItem := utils.MenuItem{TitleField: "", Desc: ""}
-// 	if m, ok := m.(utils.MenuElement); ok && m.Choice != nullItem {
-// 		fmt.Printf("\n---\nYou chose %s!\n", m.Choice.TitleField)
-// 	}
-// }
-
-
-
-
-
-////////////////////////////////////////
-////////////////////////////////////////
-
+// IMPORTS
 import (
-	components "utils/components"
-	//constants "utils/constants"
-	styles "utils/constants/styles"
-	tea "github.com/charmbracelet/bubbletea"
+	"ArchInstall/helpers"
+	"ArchInstall/sections"
+	"fmt"
 )
 
+// HELPER FUNCTIONS
+
+func welcomeScreenPrint() {
+
+	helpers.PrintAsciiArt()
+
+	fmt.Println(helpers.PrintYellow("Some quick notes about this script:"))
+	fmt.Println(helpers.PrintHiBlack("\tIt doesn't supports Wayland."))
+	fmt.Println(helpers.PrintHiBlack("\tAs of ArchISO, the default keyboard layout is en-US, so, be careful when typing if you use other layout."))
+	fmt.Println(helpers.PrintHiBlack("\tThis was made for me to deploy my system easily, so there is a lot of personal taste here."))
+	fmt.Println(helpers.PrintHiBlack("\tYet it's a very broad script, so you might be able to use it for bootstrapping your own system/rice."))
+	fmt.Println(helpers.PrintHiBlack("\tI tried to automate/simplify everything that I could from the installation guide."))
+	fmt.Println(helpers.PrintHiBlack("\tIt uses the standard 1024B measurement instead of 1000B (this means GiB instead of GB)"))
+	fmt.Println(helpers.PrintHiBlack("\tThis script is divided in 5 sections:"))
+	fmt.Println(helpers.PrintHiBlack("\t\t1. Startup: Only sets some basic options like keyboard layout, HDD/SDD, etc..."))
+	fmt.Println(helpers.PrintHiBlack("\t\t2. Pre-Install: Setup the drive and pacstrap for installation."))
+	fmt.Println(helpers.PrintHiBlack("\t\t3. Base-Install: Installs and configure the system, installs base packages and creates users."))
+	fmt.Println(helpers.PrintHiBlack("\t\t4. User Config: User customizations and custom (AUR/NIX) packages."))
+	fmt.Println(helpers.PrintHiBlack("\t\t5. Post-Install: Enables services, clear ups the installation."))
+
+	fmt.Println("All of this being said. I would like to highlight that this was a fun project to work on.")
+	fmt.Print("Considers following me on GitHub @MiraiMindz.\n\n")
+}
+
+// MAIN FUNC
 func main() {
-	p := tea.NewProgram(components.TextElement("Hello World!", styles.DefaultTextStyle), tea.WithAltScreen())
-	_, err := p.Run()
-	if err != nil {
-		panic(err)
+	welcomeScreenPrint()
+
+	if helpers.YesNo("Can we proceed to the installation?") {
+		//sections.Startupp()
+		//sections.PreInstalll()
+		//sections.BaseInstall()
+		sections.UserConfig()
+		// sections.PostInstall()
+		//fmt.Println(helpers.GetEnvironmentVariables("HOME"))
+		//helpers.CopyDir("/media/Arquivos/Programming/Projects/ArchInstall/a", "/media/Arquivos/Programming/Projects/ArchInstall/")
 	}
 }

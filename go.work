@@ -1,8 +1,6 @@
-go 1.20
+go 1.22
 
 use (
 	.
-	./sections/Startup
-	./sections/BaseInstall
-	./sections/PreInstall
+	./utils
 )
