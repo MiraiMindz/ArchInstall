@@ -20,7 +20,6 @@ func (t textElement) Init() tea.Cmd {
 
 func (t textElement) View() string {
 	retVal := t.style.Render(t.text)
-	retVal += "\n\nPress Ctrl+C or q to exit."
 	return retVal
 }
 
