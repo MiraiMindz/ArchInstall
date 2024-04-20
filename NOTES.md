@@ -1,5 +1,14 @@
 # Notes
 
+### Using charmbracelet libs
+
+Manage a way to get the split-editor (or the composable views) example to be a 
+generic function that receives the left and right side, and returns the 
+response of the left side
+
+and also create a way to have sequential views (see the views example)
+
+
 Create a common config file to store common variables for the script files.
 Compile the files separated and uses a shell script to launch then accordingly.
 
