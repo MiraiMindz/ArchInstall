@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"os"
+	//"strings"
 
 	"github.com/charmbracelet/lipgloss"
 	"golang.org/x/term"
@@ -13,13 +15,7 @@ import (
 	te "utils/ui/components/TextElement"
 )
 
-func main() {
-	w, h, e := term.GetSize(int(os.Stdin.Fd()))
-
-	if e != nil {
-		panic(e)
-	}
-
+func sectionA(w, h int) string {
 	viewportStyle := lipgloss.NewStyle().Align(lipgloss.Center, lipgloss.Center).Height(h).Width(w)
 
 	headerStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("4"))
@@ -65,8 +61,74 @@ Considers following me on GitHub @MiraiMindz.
 		lipgloss.NewStyle(),
 		viewportStyle.Render(lipgloss.JoinVertical(lipgloss.Center, headerStyle.Render(headerText), subHeaderStyle.Render(subHeaderText), lipgloss.NewStyle().Align(lipgloss.Center, lipgloss.Center).Height(5).Width(w).Render("PRESS ENTER TO CONTINUE"))))
 
-	result := te.GetAnswer(exc.Executor(cmodel))
-	if result != "" {
-		pints.PreInstall()
+	r := te.GetAnswer(exc.Executor(cmodel))
+
+	if r == "" || r == "ctrl+c" {
+		panic(fmt.Errorf("Wrong input %q\n", r))
 	}
+
+	return r
+
+}
+
+func sectionB(w, h int) string {
+	viewportStyle := lipgloss.NewStyle().Align(lipgloss.Center, lipgloss.Center).Height(h).Width(w)
+	r := te.GetAnswer(exc.Executor(te.TextElement(
+		viewportStyle,
+		lipgloss.NewStyle().Align(lipgloss.Left, lipgloss.Top).Render(
+			lipgloss.JoinVertical(
+				lipgloss.Left,
+				lipgloss.NewStyle().Bold(true).Render("DISCLAIMER\n"),
+				lipgloss.NewStyle().Align(lipgloss.Center, lipgloss.Center).Render(fmt.Sprintf("%s\n\n%s\n", lipgloss.NewStyle().Border(lipgloss.NormalBorder()).Padding(1, 2).Render(
+					`This script uses the Charmbracelet's lipgloss, bubbletea, bubbles and glamour TUI libraries, so it's constrained 
+to the limits of the libraries. Nonetheless, it's pretty responsive, and the only drawback is in the use of the 
+<Viewport()> component, which requires a manual trigger to render it's contents.
+
+Next I'll present you with the layout of the script and some explanations about it.`),
+					lipgloss.NewStyle().Background(lipgloss.Color("15")).Foreground(lipgloss.Color("0")).Padding(1, 2).Bold(true).Render("Press ANY key to continue"))))),
+	)))
+
+	if r == "" || r == "ctrl+c" {
+		panic(fmt.Errorf("Wrong input %q\n", r))
+	}
+
+	return r
+}
+
+// func sectionC(w, h int) string {
+// 	var (
+// 		titleStyle = func() lipgloss.Style {
+// 			b := lipgloss.NormalBorder()
+// 			b.Right = "├"
+// 			return lipgloss.NewStyle().BorderStyle(b).Padding(0, 1)
+// 		}()
+//
+// 		infoStyle = func() lipgloss.Style {
+// 			b := lipgloss.NormalBorder()
+// 			b.Left = "┤"
+// 			return titleStyle.Copy().BorderStyle(b)
+// 		}()
+// 	)
+//
+// 	header := lipgloss.JoinHorizontal(lipgloss.Center, titleStyle.Render("Title Example"), strings.Repeat("─", max(0, w-lipgloss.Width(titleStyle.Render("Title Example")))))
+//
+// 	footer := lipgloss.JoinHorizontal(
+// 		lipgloss.Center,
+// 		strings.Repeat("─", max(0, w-lipgloss.Width(infoStyle.Render(fmt.Sprintf("%3.f%%", 98.32))))),
+// 		infoStyle.Render(fmt.Sprintf("%3.f%%", 98.32)))
+//
+// 	s := fmt.Sprintf("%s\n%s\n%s", header, content, footer)
+//
+// }
+
+func main() {
+	w, h, e := term.GetSize(int(os.Stdin.Fd()))
+
+	if e != nil {
+		panic(e)
+	}
+
+	sectionA(w, h)
+	sectionB(w, h)
+	pints.PreInstall()
 }
