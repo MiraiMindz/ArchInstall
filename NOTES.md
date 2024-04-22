@@ -5,9 +5,13 @@
 #### Components List
 
 - [x] Select
-- [ ] MultiSelect
+- [x] MultiSelect
 - [x] TextInput (normal and password)
-- [ ] TextElement
+- [x] TextElement
+- [x] Pager
+- [ ] Add viewport/pager to elements where content exceed screen height
+
+<https://github.com/charmbracelet/bubbletea/issues/19>
 
 
 Manage a way to get the split-editor (or the composable views) example to be a 

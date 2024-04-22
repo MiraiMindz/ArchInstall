@@ -1,49 +1,17 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/charmbracelet/lipgloss"
 	"golang.org/x/term"
 
-	tea "github.com/charmbracelet/bubbletea"
 	exc "utils/ui/meta/Executor"
 
 	pints "sections/preinstall"
+
+	te "utils/ui/components/TextElement"
 )
-
-type model struct {
-	text   string
-	answer string
-}
-
-func initModel(t string) model {
-	return model{
-		text: t,
-	}
-}
-
-func (m model) Init() tea.Cmd {
-	return nil
-}
-
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c", "q", "esc", "enter":
-			m.answer = msg.String()
-			return m, tea.Quit
-		}
-	}
-
-	return m, nil
-}
-
-func (m model) View() string {
-	return m.text
-}
 
 func main() {
 	w, h, e := term.GetSize(int(os.Stdin.Fd()))
@@ -56,7 +24,7 @@ func main() {
 
 	headerStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("4"))
 
-	subHeaderStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Border(lipgloss.RoundedBorder()).PaddingTop(1).PaddingBottom(1).PaddingLeft(3).PaddingRight(3)
+	subHeaderStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Border(lipgloss.NormalBorder()).PaddingTop(1).PaddingBottom(1).PaddingLeft(3).PaddingRight(3)
 	headerText := `
     _             _       _     _                    ___           _        _ _           
    / \   _ __ ___| |__   | |   (_)_ __  _   ___  __ |_ _|_ __  ___| |_ ____| | | ___ _ __ 
@@ -93,12 +61,12 @@ All of this being said. I would like to highlight that this was a fun project to
 Considers following me on GitHub @MiraiMindz.
 
 `
-	cmodel := initModel(viewportStyle.Render(lipgloss.JoinVertical(lipgloss.Center), headerStyle.Render(headerText), subHeaderStyle.Render(subHeaderText), "\n\n\n\nPRESS ENTER TO CONTINUE"))
+	cmodel := te.TextElement(
+		lipgloss.NewStyle(),
+		viewportStyle.Render(lipgloss.JoinVertical(lipgloss.Center, headerStyle.Render(headerText), subHeaderStyle.Render(subHeaderText), lipgloss.NewStyle().Align(lipgloss.Center, lipgloss.Center).Height(5).Width(w).Render("PRESS ENTER TO CONTINUE"))))
 
-	result := exc.Executor(cmodel).(model).answer
+	result := te.GetAnswer(exc.Executor(cmodel))
 	if result != "" {
-		fmt.Println(result)
+		pints.PreInstall()
 	}
-
-	pints.PreInstall()
 }

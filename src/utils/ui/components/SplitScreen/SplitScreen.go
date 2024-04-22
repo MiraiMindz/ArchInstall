@@ -9,23 +9,25 @@ import (
 )
 
 type model struct {
-	leftSide  tea.Model
-	rightSide tea.Model
-	selected  uint
-	helpmenu  string
-	header    string
+	leftSide      tea.Model
+	rightSide     tea.Model
+	selected      uint
+	helpmenuleft  string
+	helpmenuright string
+	header        string
 }
 
 func GetLeftSide(m any) any  { return m.(model).leftSide }
 func GetRightSide(m any) any { return m.(model).rightSide }
 
-func SplitScreen(leftSide, rightSide tea.Model, helpmenu, header string) model {
+func SplitScreen(leftSide, rightSide tea.Model, header, helpmenuleft, helpmenuright string) model {
 	return model{
-		leftSide:  leftSide,
-		rightSide: rightSide,
-		selected:  0,
-		helpmenu:  helpmenu,
-		header:    header,
+		leftSide:      leftSide,
+		rightSide:     rightSide,
+		selected:      0,
+		helpmenuleft:  helpmenuleft,
+		helpmenuright: helpmenuright,
+		header:        header,
 	}
 }
 
@@ -70,10 +72,15 @@ func (m model) View() string {
 	}
 
 	sw := (w / 2) - 2
-	sh := h - 2 - lipgloss.Height(m.helpmenu) - lipgloss.Height(m.header)
+	var sh int
+	if m.selected == 1 {
+		sh = h - 2 - lipgloss.Height(m.helpmenuleft) - lipgloss.Height(m.header)
+	} else {
+		sh = h - 2 - lipgloss.Height(m.helpmenuright) - lipgloss.Height(m.header)
+	}
 
 	unselectedStyle := lipgloss.NewStyle().Height(sh).Width(sw).BorderStyle(lipgloss.HiddenBorder()).PaddingLeft(2).PaddingRight(2).PaddingTop(1).PaddingBottom(1)
-	selectedStyle := lipgloss.NewStyle().Height(sh).Width(sw).BorderStyle(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("69")).PaddingLeft(2).PaddingRight(2).PaddingTop(1).PaddingBottom(1)
+	selectedStyle := lipgloss.NewStyle().Height(sh).Width(sw).BorderStyle(lipgloss.NormalBorder()).BorderForeground(lipgloss.Color("69")).PaddingLeft(2).PaddingRight(2).PaddingTop(1).PaddingBottom(1)
 
 	// unselectedStyle := lipgloss.NewStyle().Height(sh).Width(sw).Align(lipgloss.Center, lipgloss.Center).BorderStyle(lipgloss.HiddenBorder()).Padding(2)
 	// selectedStyle := lipgloss.NewStyle().Height(sh).Width(sw).Align(lipgloss.Center, lipgloss.Center).BorderStyle(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("69")).Padding(2)
@@ -82,13 +89,13 @@ func (m model) View() string {
 			lipgloss.Left,
 			m.header,
 			lipgloss.JoinHorizontal(lipgloss.Top, unselectedStyle.Render(m.leftSide.View()), selectedStyle.Render(m.rightSide.View())),
-			m.helpmenu,
+			m.helpmenuright,
 		)
 	}
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		m.header,
 		lipgloss.JoinHorizontal(lipgloss.Top, selectedStyle.Render(m.leftSide.View()), unselectedStyle.Render(m.rightSide.View())),
-		m.helpmenu,
+		m.helpmenuleft,
 	)
 }

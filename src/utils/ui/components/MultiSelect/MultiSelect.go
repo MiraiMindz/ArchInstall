@@ -1,11 +1,12 @@
-package Select
+package multiselect
 
 import (
 	"fmt"
 
-	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+
+	"github.com/charmbracelet/bubbles/viewport"
 )
 
 type dim struct {
@@ -14,12 +15,11 @@ type dim struct {
 }
 
 type model struct {
-	prompt string
-	// bottom  string
-	options    []string
-	cursor     int
-	answer     string
+	prompt     string
 	style      lipgloss.Style
+	cursor     int
+	choices    []string
+	selected   map[int]string
 	viewport   viewport.Model
 	dimensions dim
 	ready      bool
@@ -29,16 +29,20 @@ var hoverStyle lipgloss.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("6
 var selectedStyle lipgloss.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("12"))
 var optStyle lipgloss.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("15"))
 
-func GetAnswer(sel any) string {
-	return sel.(model).answer
+func GetAnswer(sel any) []string {
+	var sa []string
+	for _, v := range sel.(model).selected {
+		sa = append(sa, v)
+	}
+	return sa
 }
 
-func Select(style lipgloss.Style, width, height int, prompt string, options ...string) model {
+func MultiSelect(style lipgloss.Style, width, height int, prompt string, options ...string) model {
 	return model{
-		prompt: prompt,
-		// bottom:  bottom,
-		options: options,
-		style:   style,
+		prompt:   prompt,
+		style:    style,
+		choices:  options,
+		selected: make(map[int]string),
 		dimensions: dim{
 			width:  width,
 			height: height,
@@ -52,6 +56,7 @@ func (m model) Init() tea.Cmd {
 	m.viewport.SetContent(m.renderList())
 	m.ready = true
 	return nil
+
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -59,6 +64,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmd  tea.Cmd
 		cmds []tea.Cmd
 	)
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -69,13 +75,19 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursor--
 			}
 		case "down", "j":
-			if m.cursor < len(m.options)-1 {
+			if m.cursor < len(m.choices)-1 {
 				m.cursor++
 			}
 		case " ":
-			m.answer = m.options[m.cursor]
+			_, ok := m.selected[m.cursor]
+			if ok {
+				delete(m.selected, m.cursor)
+			} else {
+				m.selected[m.cursor] = m.choices[m.cursor]
+			}
 		}
 	}
+
 	if !m.ready {
 		m.viewport = viewport.New(m.dimensions.width-1, m.dimensions.height-1)
 		m.viewport.HighPerformanceRendering = false
@@ -99,10 +111,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) renderList() string {
 	s := fmt.Sprintf("%s\n", m.prompt)
 
-	for i, opt := range m.options {
+	for i, opt := range m.choices {
 		checked := " "
 		cursor := " "
-		if m.answer == opt {
+		if _, ok := m.selected[i]; ok {
 			checked = "x"
 		}
 		if m.cursor == i {
@@ -112,7 +124,7 @@ func (m model) renderList() string {
 			s += hoverStyle.Render(fmt.Sprintf("%s [%s] %s", cursor, checked, opt))
 			s += "\n"
 		} else {
-			if m.answer == opt {
+			if _, ok := m.selected[i]; ok {
 				s += selectedStyle.Render(fmt.Sprintf("%s [%s] %s", cursor, checked, opt))
 				s += "\n"
 			} else {
