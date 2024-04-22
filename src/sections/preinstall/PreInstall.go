@@ -6,8 +6,11 @@ import (
 
 	"golang.org/x/term"
 
+	header "utils/ui/components/Header"
+	helpmenu "utils/ui/components/HelpMenu"
 	sel "utils/ui/components/Select"
 	spl "utils/ui/components/SplitScreen"
+	ti "utils/ui/components/TextInput"
 	exc "utils/ui/meta/Executor"
 
 	"github.com/charmbracelet/lipgloss"
@@ -19,15 +22,15 @@ func PreInstall() {
 		panic(e)
 	}
 
-	helpmenu := lipgloss.NewStyle().Padding(1).Foreground(lipgloss.Color("8")).Render("[TAB]: Switch Focus\n[UP]: Move Cursor Up    [DOWN]: Move Cursor Down\n[SPACE]: Select Option  [ENTER]: Send Response")
-	headertext := lipgloss.NewStyle().Padding(1).Foreground(lipgloss.Color("13")).Render("[03/26]\tPre-Install\tSelect Window Manager")
+	hpt, hps := helpmenu.HelpMenu("[TAB]: Switch Focus\n[UP]: Move Cursor Up    [DOWN]: Move Cursor Down\n[SPACE]: Select Option  [ENTER]: Send Response")
+	hdt, hds := header.Header("[03/26]\tPre-Install\tSelect Window Manager")
 
-	sw := (w / 2) - 4
-	sh := h - 4 - lipgloss.Height(helpmenu) - lipgloss.Height(headertext)
+	r := ti.GetAnswer(spl.GetLeftSide(exc.Executor(spl.SplitScreen(
+		ti.TextInput("Enter Something:", "Type Here", true, 256, 32, lipgloss.NewStyle().Height(h-(4+hps+hds)).Width((w/2)-4).Align(lipgloss.Left, lipgloss.Top)),
+		sel.Select(lipgloss.NewStyle().Height(h-(4+hps+hds)).Width((w/2)-4).Align(lipgloss.Left, lipgloss.Top), "Select Something", "i3WM", "BSPWM", "CAVA", "Kitty"),
+		hpt,
+		hdt,
+	))))
 
-	style := lipgloss.NewStyle().Height(sh).Width(sw).Align(lipgloss.Left, lipgloss.Top)
-
-	sl := sel.Select(style, "Select Something", "i3WM", "BSPWM", "CAVA", "Kitty")
-	m := exc.Executor(spl.SplitScreen(sl, sl, helpmenu, headertext))
-	fmt.Println(sel.GetAnswer(spl.GetLeftSide(m)))
+	fmt.Println(r)
 }

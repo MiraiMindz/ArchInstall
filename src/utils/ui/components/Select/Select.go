@@ -23,6 +23,7 @@ var optStyle lipgloss.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("15"
 func GetAnswer(sel any) string {
 	return sel.(model).answer
 }
+
 func Select(style lipgloss.Style, prompt string, options ...string) model {
 	return model{
 		prompt: prompt,

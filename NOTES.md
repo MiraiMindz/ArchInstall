@@ -2,6 +2,14 @@
 
 ### Using charmbracelet libs
 
+#### Components List
+
+- [x] Select
+- [ ] MultiSelect
+- [x] TextInput (normal and password)
+- [ ] TextElement
+
+
 Manage a way to get the split-editor (or the composable views) example to be a 
 generic function that receives the left and right side, and returns the 
 response of the left side
