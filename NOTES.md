@@ -9,7 +9,10 @@
 - [x] TextInput (normal and password)
 - [x] TextElement
 - [x] Pager
-- [ ] Add viewport/pager to elements where content exceed screen height
+- [x] Add viewport/pager to elements where content exceed screen height
+- [ ] Add Descriptive variant for MultiSelect & Select.
+- [x] Add option to TextElement to render Markdown with Glamour
+
 
 <https://github.com/charmbracelet/bubbletea/issues/19>
 

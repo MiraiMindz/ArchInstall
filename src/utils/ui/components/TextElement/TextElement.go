@@ -1,25 +1,27 @@
 package textelement
 
 import (
-	"github.com/charmbracelet/lipgloss"
-
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/glamour"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type model struct {
-	text   string
-	answer string
-	style  lipgloss.Style
+	text       string
+	answer     string
+	style      lipgloss.Style
+	ismarkdown bool
 }
 
 func GetAnswer(mod any) string {
 	return mod.(model).answer
 }
 
-func TextElement(style lipgloss.Style, t string) model {
+func TextElement(ismarkdown bool, style lipgloss.Style, t string) model {
 	return model{
-		text:  t,
-		style: style,
+		text:       t,
+		style:      style,
+		ismarkdown: ismarkdown,
 	}
 }
 
@@ -41,5 +43,22 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
+	if m.ismarkdown {
+		renderer, err := glamour.NewTermRenderer(
+			glamour.WithAutoStyle(),
+			glamour.WithWordWrap(lipgloss.Width(m.text)+2),
+		)
+		if err != nil {
+			panic(err)
+		}
+
+		str, err := renderer.Render(m.text)
+		if err != nil {
+			panic(err)
+		}
+
+		return m.style.Render(str)
+	}
+
 	return m.style.Render(m.text)
 }
